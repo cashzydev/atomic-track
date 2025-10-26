@@ -55,3 +55,4 @@ Após configurar, teste o login com Google:
 2. Complete a autenticação no Google
 3. Deve redirecionar para `/auth/callback`
 4. Após processar, deve redirecionar para `/dashboard` ou `/onboarding`
+

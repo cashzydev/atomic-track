@@ -52,3 +52,4 @@ SELECT get_server_date() as server_date_test;
 
 -- Substitua 'USER_ID_AQUI' pelo ID do usuário que está testando
 -- SELECT * FROM get_user_todays_completions('USER_ID_AQUI');
+

@@ -35,3 +35,4 @@ BEGIN
     RAISE NOTICE 'User lucasoliveiratnb0@gmail.com not found in auth.users - will be created on first signup';
   END IF;
 END $$;
+

@@ -140,3 +140,4 @@ BEGIN
   RETURN COALESCE(total_xp_today, 0);
 END;
 $function$;
+

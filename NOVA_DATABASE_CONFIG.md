@@ -16,3 +16,4 @@ project_id = "ifuhypkkmkaklkmcypmc"
 
 # URL da database PostgreSQL:
 # postgresql://postgres:[YOUR_PASSWORD]@db.ifuhypkkmkaklkmcypmc.supabase.co:5432/postgres
+

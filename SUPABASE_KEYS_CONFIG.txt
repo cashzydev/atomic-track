@@ -12,3 +12,4 @@ VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
 # 2. Cole o conteúdo acima no arquivo
 # 3. Salve o arquivo
 # 4. Reinicie o servidor (npm run dev)
+

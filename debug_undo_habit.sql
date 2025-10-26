@@ -49,3 +49,4 @@ LIMIT 10;
 -- 7. Testar a função calculate_habit_streak
 -- Substitua 'HABIT_ID_AQUI' pelo ID do hábito que está testando
 SELECT * FROM calculate_habit_streak(HABIT_ID_AQUI);
+

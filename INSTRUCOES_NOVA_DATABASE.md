@@ -89,3 +89,4 @@ Se ainda houver problemas:
 2. Verifique as variáveis de ambiente
 3. Confirme se o usuário tem role de admin no banco
 4. Verifique os logs do console do navegador
+
