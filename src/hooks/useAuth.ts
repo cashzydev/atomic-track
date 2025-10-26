@@ -58,11 +58,13 @@ export function useAuth() {
           .from('profiles')
           .insert({
             id: authData.user.id,
+            email: authData.user.email!,
             name,
-            desired_identity: '',
-            specific_change: '',
-            points: 0,
-            longest_streak: 0
+            avatar_type: 'initials',
+            avatar_color: 'violet',
+            tier: 'free',
+            xp: 0,
+            level: 1
           });
 
         if (profileError) throw profileError;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday as dateIsToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -7,6 +7,8 @@ import { Card } from './ui/card';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import MobileCalendarCarousel from './MobileCalendarCarousel';
+import HabitTimelineFiltered from './HabitTimelineFiltered';
 interface Habit {
   id: number;
   title: string;
@@ -34,6 +36,19 @@ export const NotionCalendar: React.FC<NotionCalendarProps> = ({
   onDayClick
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar se é mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, {
@@ -57,12 +72,37 @@ export const NotionCalendar: React.FC<NotionCalendarProps> = ({
   const isToday = (date: Date) => isSameDay(date, new Date());
   const isPast = (date: Date) => date < new Date() && !isToday(date);
   const isFuture = (date: Date) => date > new Date();
-  return <div className="space-y-8">
-      {/* Timeline View - Linha do Tempo */}
-      
+  return (
+    <div className="space-y-8">
+      {isMobile ? (
+        /* Mobile View */
+        <div className="space-y-6">
+          {/* Carrossel de dias */}
+          <div className="card-padding neuro-card rounded-2xl">
+            <MobileCalendarCarousel
+              habits={habits}
+              completions={completions}
+              onDayClick={onDayClick}
+            />
+          </div>
 
-      {/* Monthly Calendar */}
-      <div className="card-padding neuro-card rounded-2xl">
+          {/* Timeline com filtros */}
+          <div className="card-padding neuro-card rounded-2xl">
+            <HabitTimelineFiltered
+              habits={habits}
+              completions={completions}
+              onDayClick={onDayClick}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Desktop View */
+        <div>
+        {/* Timeline View - Linha do Tempo */}
+        
+
+        {/* Monthly Calendar */}
+        <div className="card-padding neuro-card rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
         <h2 className="text-section-title capitalize">
@@ -146,21 +186,24 @@ export const NotionCalendar: React.FC<NotionCalendarProps> = ({
         })}
       </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-6 mt-8 pt-6 border-t border-border text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600" />
-            <span>Completado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-slate-700/50 border border-slate-600" />
-            <span>Pendente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-base">✨</span>
-            <span>Todos completados</span>
+          {/* Legend */}
+          <div className="flex items-center gap-6 mt-8 pt-6 border-t border-border text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600" />
+              <span>Completado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-lg bg-slate-700/50 border border-slate-600" />
+              <span>Pendente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">✨</span>
+              <span>Todos completados</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };

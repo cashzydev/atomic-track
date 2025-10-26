@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
   updateOnboardingStatus: (completed: boolean) => Promise<void>;
@@ -22,22 +23,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    setLoading(true); // Garante que o loading é reativado se o contexto for remontado
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        setLoading(false); // <--- PONTO CHAVE
 
         if (session?.user) {
           // Redirecionar baseado no status de onboarding
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            const onboardingCompleted = session.user.user_metadata?.onboarding_completed;
-            if (!onboardingCompleted) {
-              navigate('/onboarding');
-            } else {
-              navigate('/dashboard');
-            }
+          const onboardingCompleted = session.user.user_metadata?.onboarding_completed;
+          if (!onboardingCompleted) {
+            navigate('/onboarding');
+          } else {
+            navigate('/dashboard');
           }
           
           // Initialize user badges
@@ -46,25 +45,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Verificar status do onboarding na inicialização
-      if (session?.user && !session.user.user_metadata?.onboarding_completed) {
-        navigate('/onboarding');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data: authData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -74,6 +63,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     });
+
+    // Criar perfil se o usuário foi criado
+    if (!error && authData.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: authData.user.email!,
+          name,
+          avatar_type: 'initials',
+          avatar_color: 'violet',
+          tier: 'free',
+          xp: 0,
+          level: 1
+        });
+
+      if (profileError) {
+        console.error('Erro ao criar perfil:', profileError);
+        // Não retornar erro aqui para não quebrar o fluxo de signup
+      }
+    }
 
     return { error };
   };
@@ -91,9 +101,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    if (error) {
+      console.error('Error signing in with Google:', error);
+      // Opcional: Adicionar um toast de erro aqui
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+    } else {
+      navigate('/auth');
+    }
   };
 
   const updateOnboardingStatus = async (completed: boolean) => {
@@ -126,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session, 
       signUp, 
       signIn, 
+      signInWithGoogle,
       signOut, 
       loading,
       updateOnboardingStatus 

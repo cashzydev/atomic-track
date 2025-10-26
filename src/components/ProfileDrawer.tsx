@@ -115,7 +115,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               </div>
               <Progress value={progressPercentage} className="h-2" />
               <p className="text-xs text-muted-foreground text-center">
-                {xpNeededForNext - xpInCurrentLevel} XP para o próximo nível
+                {xpNeededForNext - xpInCurrentLevel} XP para completar
               </p>
             </div>
           </div>

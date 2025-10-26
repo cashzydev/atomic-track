@@ -1,5 +1,6 @@
 import React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { getIconComponent } from '@/config/icon-map';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,14 @@ export function HabitStackSelector({ habits, value, onChange }: HabitStackSelect
           aria-expanded={open}
           className="w-full justify-between bg-background border-input hover:bg-muted/50"
         >
-          {selectedHabit ? selectedHabit.title : "Selecione um hábito..."}
+          {selectedHabit ? (
+            <div className="flex items-center gap-2">
+              {selectedHabit.icon && React.createElement(getIconComponent(selectedHabit.icon), { className: 'w-4 h-4' })}
+              <span>{selectedHabit.title}</span>
+            </div>
+          ) : (
+            "Selecione um hábito..."
+          )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -58,13 +66,16 @@ export function HabitStackSelector({ habits, value, onChange }: HabitStackSelect
                   setOpen(false);
                 }}
               >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === habit.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {habit.title}
+                <div className="flex items-center gap-2">
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === habit.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {habit.icon && React.createElement(getIconComponent(habit.icon), { className: 'w-4 h-4 opacity-80 mr-1' })}
+                  <span>{habit.title}</span>
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

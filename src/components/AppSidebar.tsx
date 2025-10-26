@@ -208,9 +208,9 @@ export function AppSidebar() {
                 Nível {levelInfo?.level || 1}
               </span>
               <span className="text-xs text-slate-400">
-                {currentLevelXP !== undefined && nextLevelXP !== undefined 
-                  ? `${Math.round((currentLevelXP / nextLevelXP) * 100)}% para próximo nível`
-                  : '0% para próximo nível'}
+                {currentLevelXP !== undefined && nextLevelXP !== undefined && nextLevelXP > 0
+                  ? `${Math.round((currentLevelXP / nextLevelXP) * 100)}% completo`
+                  : '0% completo'}
               </span>
             </div>
           </div>

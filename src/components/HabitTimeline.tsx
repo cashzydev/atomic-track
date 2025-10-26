@@ -1,285 +1,380 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Button } from './ui/button';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '@/utils/haptics';
-import * as LucideIcons from 'lucide-react';
-import { Skeleton } from './ui/skeleton';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
-interface Habit {
+import { getIconComponent } from '@/config/icon-map';
+interface TimelineHabit {
   id: number;
   title: string;
   icon: string;
-}
-
-interface Completion {
-  habit_id: number;
-  date: string;
-  percentage: number;
+  completed: boolean;
+  completedAt?: string;
 }
 
 interface HabitTimelineProps {
-  habits: Habit[];
-  completions: Completion[];
-  onHabitToggle: (habitId: number) => void;
-  onDayClick?: (date: Date) => void;
+  habits: TimelineHabit[];
+  className?: string;
 }
 
-const getIconComponent = (iconName: string) => {
-  const Icon = (LucideIcons as any)[iconName];
-  return Icon || LucideIcons.Circle;
-};
-
-export const HabitTimeline: React.FC<HabitTimelineProps> = ({
-  habits,
-  completions,
-  onHabitToggle,
-  onDayClick,
-}) => {
-  const [centerDate, setCenterDate] = useState(new Date());
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simular loading inicial
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Gerar 14 dias (7 antes e 7 depois da data central)
-  const visibleDays = Array.from({ length: 14 }, (_, i) => {
-    return addDays(centerDate, i - 7);
-  });
-
-  const isHabitCompletedOnDay = (habitId: number, date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return completions.some(c => c.habit_id === habitId && c.date === dateStr && c.percentage >= 100);
-  };
-
-  const getDayCompletionPercentage = (date: Date) => {
-    const completedCount = habits.filter(h => isHabitCompletedOnDay(h.id, date)).length;
-    return habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
-  };
-
-  const goToToday = () => {
-    setCenterDate(new Date());
-    triggerHaptic('medium');
-    
-    // Scroll suave para o centro
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const cardWidth = 120 + 12; // width + gap
-      const scrollPosition = (7 * cardWidth) - (container.offsetWidth / 2) + (cardWidth / 2);
-      container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
-    }
-  };
-
-  const scrollToNext = () => {
-    setCenterDate(addDays(centerDate, 7));
-    triggerHaptic('light');
-  };
-
-  const scrollToPrev = () => {
-    setCenterDate(subDays(centerDate, 7));
-    triggerHaptic('light');
-  };
-
-  const isToday = (date: Date) => isSameDay(startOfDay(date), startOfDay(new Date()));
-  const isPast = (date: Date) => startOfDay(date) < startOfDay(new Date()) && !isToday(date);
-  const isFuture = (date: Date) => startOfDay(date) > startOfDay(new Date());
-
-  if (isLoading) {
+export const HabitTimeline: React.FC<HabitTimelineProps> = ({ habits, className }) => {
+  if (!habits || habits.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-20" />
-        </div>
-        <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="min-w-[120px] h-[140px] rounded-xl" />
-          ))}
-        </div>
+      <div className={cn("flex items-center justify-center p-8", className)}>
+        <p className="text-muted-foreground text-sm">Nenhum hábito para exibir</p>
       </div>
     );
   }
 
+  // Ordenar hábitos cronologicamente (completados primeiro, depois pendentes)
+  const sortedHabits = [...habits].sort((a, b) => {
+    // Se ambos são completados, ordenar por horário de conclusão
+    if (a.completed && b.completed) {
+      return new Date(a.completedAt || 0).getTime() - new Date(b.completedAt || 0).getTime();
+    }
+    // Se apenas um é completado, o completado vem primeiro
+    if (a.completed && !b.completed) return -1;
+    if (!a.completed && b.completed) return 1;
+    // Se ambos são pendentes, manter ordem original
+    return 0;
+  });
+
+  // Calcular estatísticas
+  const completedCount = sortedHabits.filter(habit => habit.completed).length;
+  const totalCount = sortedHabits.length;
+  
+  // Encontrar o último hábito completado para a linha de progresso
+  const lastCompletedIndex = sortedHabits.findLastIndex(habit => habit.completed);
+
+  // Função para calcular posicionamento dinâmico
+  const getDynamicPositioning = (habitCount: number) => {
+    if (habitCount === 1) {
+      return {
+        containerClass: "flex justify-center",
+        habitClass: "flex-col items-center",
+        spacing: "0"
+      };
+    } else if (habitCount === 2) {
+      return {
+        containerClass: "flex justify-between",
+        habitClass: "flex-col items-center",
+        spacing: "gap-8"
+      };
+    } else if (habitCount <= 4) {
+      return {
+        containerClass: "flex justify-between",
+        habitClass: "flex-col items-center",
+        spacing: "gap-4"
+      };
+    } else {
+      return {
+        containerClass: "flex justify-between",
+        habitClass: "flex-col items-center",
+        spacing: "gap-2"
+      };
+    }
+  };
+
+  const positioning = getDynamicPositioning(totalCount);
+
   return (
-    <div className="space-y-4">
-      {/* Header com navegação */}
-      <div className="flex items-center justify-between">
+    <div className={cn("w-full", className)}>
+      {/* Header com estatísticas */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Linha do Tempo</h3>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={scrollToPrev}
-            className="h-8 w-8"
-          >
-            <ChevronLeft size={20} />
-          </Button>
-          <h3 className="text-lg font-semibold">
-            {format(centerDate, 'MMMM yyyy', { locale: ptBR })}
-          </h3>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={scrollToNext}
-            className="h-8 w-8"
-          >
-            <ChevronRight size={20} />
-          </Button>
+          <span className="text-sm text-muted-foreground">
+            {completedCount}/{totalCount}
+          </span>
+          <div className="w-20 h-1 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(completedCount / totalCount) * 100}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            />
+          </div>
         </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToToday}
-          className="h-8"
-        >
-          Hoje
-        </Button>
       </div>
 
-      {/* Timeline horizontal scrollável */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+      {/* Timeline Container */}
+      <div className="relative">
+        {/* Mobile: Layout Horizontal */}
+        <div className="block sm:hidden">
+          {/* Linha de Fundo (Cinza) - Horizontal passando através de todos os hábitos */}
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted/30 -translate-y-1/2" />
+          
+          {/* Linha de Progresso (Roxa) - Preenchimento dinâmico horizontal */}
+          {completedCount > 0 && (
+            <div
+              className="absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-violet-500 to-purple-500 -translate-y-1/2"
         style={{ 
-          scrollPaddingLeft: '1rem',
-          WebkitOverflowScrolling: 'touch'
-        }}
-      >
-        {visibleDays.map((day, index) => {
-          const todayDay = isToday(day);
-          const pastDay = isPast(day);
-          const futureDay = isFuture(day);
-          const percentage = getDayCompletionPercentage(day);
-          const completedHabits = habits.filter(h => isHabitCompletedOnDay(h.id, day));
-
-          return (
-            <button
-              key={index}
-              onClick={() => {
-                onDayClick?.(day);
-                triggerHaptic('light');
+                width: lastCompletedIndex === -1 
+                  ? '0%' 
+                  : `${((lastCompletedIndex + 1) / totalCount) * 100}%`
               }}
-              className={cn(
-                'min-w-[120px] h-[140px] rounded-xl p-3 snap-center',
-                'flex flex-col gap-2 transition-all duration-200',
-                'touch-manipulation',
-                futureDay ? 'neuro-flat cursor-not-allowed' : 'neuro-card cursor-pointer active:scale-95',
-                todayDay && !futureDay && 'ring-2 ring-primary/40 ring-offset-2 ring-offset-background',
-                percentage === 100 && !futureDay && 'neuro-highlight'
-              )}
-              style={percentage === 100 && !futureDay ? { boxShadow: 'var(--shadow-emerald-glow)' } : undefined}
-            >
-              {/* Data e dia da semana */}
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-xs text-muted-foreground uppercase">
-                  {format(day, 'EEE', { locale: ptBR })}
-                </span>
-                <span className={cn(
-                  'text-2xl font-bold',
-                  todayDay && 'text-primary'
-                )}>
-                  {format(day, 'd')}
-                </span>
-              </div>
+            />
+          )}
 
-              {/* Barra de progresso */}
-              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className={cn(
-                    "h-full transition-all duration-300 rounded-full",
-                    percentage === 100 ? "bg-gradient-to-r from-emerald-500 to-green-600" : "bg-gradient-to-r from-violet-500 to-purple-600"
-                  )}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-
-              {/* Percentual */}
-              <div className="text-xs font-semibold text-center">
-                {percentage}%
-              </div>
-
-              {/* Ícones dos hábitos */}
-              <div className="flex flex-wrap gap-1 justify-center items-center flex-1">
-                {habits.slice(0, 6).map((habit) => {
-                  const Icon = getIconComponent(habit.icon);
-                  const isCompleted = isHabitCompletedOnDay(habit.id, day);
+          {/* Container dos hábitos - Layout horizontal dinâmico */}
+          <div className={cn(
+            "relative flex items-center py-6 px-4",
+            positioning.containerClass,
+            positioning.spacing
+          )}>
+            {sortedHabits.map((habit, index) => {
+              const IconComponent = getIconComponent(habit.icon);
+              const isCompleted = habit.completed;
+              const isLastCompleted = isCompleted && index === lastCompletedIndex;
+              const isFirstIncomplete = !isCompleted && index === lastCompletedIndex + 1;
 
                   return (
-                    <TooltipProvider key={habit.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (todayDay && !futureDay) {
-                                onHabitToggle(habit.id);
-                                triggerHaptic('medium');
-                              }
-                            }}
+                <motion.div
+                  key={habit.id}
+                  className={cn(
+                    "relative group z-10",
+                    positioning.habitClass
+                  )}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: index * 0.1,
+                    ease: "easeOut"
+                  }}
+                >
+                  {/* Bolinha do hábito */}
+                  <div
                             className={cn(
-                              'w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200',
-                              'min-h-[20px] min-w-[20px]', // Touch target
-                              todayDay && !futureDay && 'cursor-pointer active:scale-110',
-                              futureDay && 'opacity-40 cursor-not-allowed',
+                      "relative rounded-full flex items-center justify-center transition-all duration-300",
+                      "border-2 border-transparent shadow-lg",
+                      // Tamanho dinâmico baseado na quantidade de hábitos
+                      totalCount === 1 ? "w-16 h-16" :
+                      totalCount === 2 ? "w-14 h-14" :
+                      totalCount <= 4 ? "w-12 h-12" :
+                      "w-10 h-10",
                               isCompleted 
-                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-sm' 
-                                : 'bg-muted border border-border'
-                            )}
-                          >
-                            <Icon size={10} className={isCompleted ? 'text-white' : 'text-muted-foreground'} />
+                        ? "bg-violet-500 text-white border-violet-500 shadow-[0_4px_16px_rgba(139,92,246,0.4)]"
+                        : "bg-muted text-muted-foreground border-muted/50 hover:border-violet-500/30 hover:bg-muted/80"
+                    )}
+                  >
+                    <IconComponent className={cn(
+                      // Tamanho do ícone baseado no tamanho da bolinha
+                      totalCount === 1 ? "w-7 h-7" :
+                      totalCount === 2 ? "w-6 h-6" :
+                      totalCount <= 4 ? "w-5 h-5" :
+                      "w-4 h-4"
+                    )} />
+                    
+                    {/* Indicador de check para hábitos completos */}
+                    {isCompleted && (
+                      <motion.div
+                        className={cn(
+                          "absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center",
+                          "border-2 border-background shadow-lg"
+                        )}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3, delay: 0.5 }}
+                      >
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </motion.div>
+                    )}
+                    
+                    {/* Efeito de pulso para o último hábito completado */}
+                    {isLastCompleted && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full bg-violet-500 opacity-20"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    )}
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs font-medium">{habit.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {isCompleted ? 'Completado ✓' : 'Pendente'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+
+                  {/* Label do hábito */}
+                  <div className="mt-3 text-center max-w-20">
+                    <p className={cn(
+                      "font-medium transition-colors duration-200 text-sm",
+                      isCompleted ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"
+                    )}>
+                      {habit.title}
+                    </p>
+                    
+                    {/* Timestamp para hábitos completos - minimalista */}
+                    {isCompleted && habit.completedAt && (
+                      <p className="mt-1 text-xs text-muted-foreground/60">
+                        {new Date(habit.completedAt).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Tooltip no hover - apenas em desktop */}
+                  <div className={cn(
+                    "hidden sm:block absolute top-1/2 -translate-y-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10",
+                    index % 2 === 0 ? "left-full ml-3" : "right-full mr-3"
+                  )}>
+                    <div className="font-medium">{habit.title}</div>
+                    {isCompleted ? (
+                      <div className="text-emerald-500 font-medium">
+                        ✓ Concluído às {habit.completedAt && new Date(habit.completedAt).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">Pendente</div>
+                    )}
+                  </div>
+                </motion.div>
                   );
                 })}
-                {habits.length > 6 && (
-                  <div className="w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center">
-                    <span className="text-[8px] font-medium text-muted-foreground">
-                      +{habits.length - 6}
-                    </span>
+          </div>
+        </div>
+
+        {/* Desktop: Layout Horizontal */}
+        <div className="hidden sm:block">
+          {/* Linha de Fundo (Cinza) - Horizontal passando através de todos os hábitos */}
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted/30 -translate-y-1/2" />
+          
+          {/* Linha de Progresso (Roxa) - Preenchimento dinâmico horizontal */}
+          {completedCount > 0 && (
+            <div
+              className="absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-violet-500 to-purple-500 -translate-y-1/2"
+              style={{ 
+                width: lastCompletedIndex === -1 
+                  ? '0%' 
+                  : `${((lastCompletedIndex + 1) / totalCount) * 100}%`
+              }}
+            />
+          )}
+
+          {/* Container dos hábitos - Layout horizontal dinâmico */}
+          <div className={cn(
+            "relative flex items-center py-6 px-6",
+            positioning.containerClass,
+            positioning.spacing
+          )}>
+            {sortedHabits.map((habit, index) => {
+              const IconComponent = getIconComponent(habit.icon);
+              const isCompleted = habit.completed;
+              const isLastCompleted = isCompleted && index === lastCompletedIndex;
+              const isFirstIncomplete = !isCompleted && index === lastCompletedIndex + 1;
+
+              return (
+                <motion.div
+                  key={habit.id}
+                  className={cn(
+                    "relative group z-10",
+                    positioning.habitClass
+                  )}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: index * 0.1,
+                    ease: "easeOut"
+                  }}
+                >
+                  {/* Bolinha do hábito */}
+                  <div
+                    className={cn(
+                      "relative rounded-full flex items-center justify-center transition-all duration-300",
+                      "border-2 border-transparent shadow-lg",
+                      // Tamanho dinâmico baseado na quantidade de hábitos
+                      totalCount === 1 ? "w-16 h-16" :
+                      totalCount === 2 ? "w-14 h-14" :
+                      totalCount <= 4 ? "w-12 h-12" :
+                      "w-10 h-10",
+                      isCompleted
+                        ? "bg-violet-500 text-white border-violet-500 shadow-[0_4px_16px_rgba(139,92,246,0.4)]"
+                        : "bg-muted text-muted-foreground border-muted/50 hover:border-violet-500/30 hover:bg-muted/80"
+                    )}
+                  >
+                    <IconComponent className={cn(
+                      // Tamanho do ícone baseado no tamanho da bolinha
+                      totalCount === 1 ? "w-7 h-7" :
+                      totalCount === 2 ? "w-6 h-6" :
+                      totalCount <= 4 ? "w-5 h-5" :
+                      "w-4 h-4"
+                    )} />
+                    
+                    {/* Indicador de check para hábitos completos */}
+                    {isCompleted && (
+                      <motion.div
+                        className={cn(
+                          "absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center",
+                          "border-2 border-background shadow-lg"
+                        )}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3, delay: 0.5 }}
+                      >
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </motion.div>
+                    )}
+                    
+                    {/* Efeito de pulso para o último hábito completado */}
+                    {isLastCompleted && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full bg-violet-500 opacity-20"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    )}
                   </div>
+
+                  {/* Label do hábito */}
+                  <div className="mt-3 text-center max-w-20">
+                    <p className={cn(
+                      "font-medium transition-colors duration-200 text-sm",
+                      isCompleted ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"
+                    )}>
+                      {habit.title}
+                    </p>
+                    
+                    {/* Timestamp para hábitos completos - minimalista */}
+                    {isCompleted && habit.completedAt && (
+                      <p className="mt-1 text-xs text-muted-foreground/60">
+                        {new Date(habit.completedAt).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
                 )}
               </div>
 
-              {/* Emoji de celebração */}
-              {percentage === 100 && !futureDay && (
-                <div className="text-center text-sm animate-bounce">
-                  ✨
+                  {/* Tooltip no hover - apenas em desktop */}
+                  <div className="hidden sm:block absolute bottom-full mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                    <div className="font-medium">{habit.title}</div>
+                    {isCompleted ? (
+                      <div className="text-emerald-500 font-medium">
+                        ✓ Concluído às {habit.completedAt && new Date(habit.completedAt).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                 </div>
+                    ) : (
+                      <div className="text-muted-foreground">Pendente</div>
               )}
-            </button>
+                  </div>
+                </motion.div>
           );
         })}
+          </div>
+        </div>
       </div>
 
       {/* Legenda */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-emerald-500 to-green-600" />
-          <span>Completado</span>
+      <div className="flex items-center gap-4 mt-6 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-violet-500" />
+          <span className="text-muted-foreground">Concluído</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-muted border border-border" />
-          <span>Pendente</span>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-muted" />
+          <span className="text-muted-foreground">Pendente</span>
         </div>
       </div>
     </div>

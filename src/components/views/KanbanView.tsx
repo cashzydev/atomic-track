@@ -91,11 +91,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({
         <Progress value={completionPercentage} className="h-2" />
       </motion.div>
 
-      {/* Search Bar */}
-      {habits.length > 3 && <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          
-        </div>}
+      {/* Search Bar removed: icon caused visual clutter on small screens */}
 
       {/* Kanban Board */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

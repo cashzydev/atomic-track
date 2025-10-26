@@ -146,6 +146,8 @@ All colors MUST be HSL.
 
 @layer base {
   * {
+    /* keep border utilities but ensure box-sizing is consistent to avoid overflow caused by padding/border */
+    box-sizing: border-box;
     @apply border-border;
   }
   
@@ -181,6 +183,9 @@ All colors MUST be HSL.
     background-attachment: fixed;
     background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%;
     position: relative;
+   /* Prevent accidental page-level horizontal overflow. Individual components that need horizontal scroll
+     should use their own overflow-x:auto. This is safer than letting any child cause the page to scroll horizontally. */
+   overflow-x: hidden;
   }
 
   body::before {

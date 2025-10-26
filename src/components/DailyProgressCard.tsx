@@ -1,7 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, Zap, Circle, Clock } from 'lucide-react';
+import { CheckCircle2, Flame, Zap, Circle, Clock, Check } from 'lucide-react';
 import { Card } from './ui/card';
+import { Progress } from './ui/progress';
+import { cn } from '@/lib/utils';
 import { getIconComponent } from '@/config/icon-map';
 
 interface HabitTimelineItem {
@@ -44,64 +46,64 @@ export const DailyProgressCard: React.FC<DailyProgressCardProps> = ({
           </span>
         </div>
 
-        {/* Timeline Horizontal */}
+        {/* Timeline / Habit tokens */}
         {habits.length > 0 && (
           <div className="relative">
-            {/* Linha conectora */}
-            <div className="absolute top-6 left-0 right-0 h-0.5 bg-border" />
-            <div 
-              className="absolute top-6 left-0 h-0.5 bg-primary transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
-            />
-            
-            {/* Hábitos na timeline */}
-            <div className="relative flex justify-between items-start gap-2">
+            {/* Top progress summary connected to tokens */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Progresso Diário</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">{Math.round(progressPercentage)}%</span>
+                <div className="w-44 md:w-60">
+                  <Progress value={progressPercentage} className="h-2" />
+                </div>
+              </div>
+            </div>
+
+            {/* tokens container: wrap on small screens, horizontal scroll if many items */}
+            <div className="flex flex-wrap gap-3 md:gap-4">
               {habits.map((habit, index) => {
                 const IconComponent = getIconComponent(habit.icon);
+                const nextIndex = habits.findIndex(h => !h.completed);
+                const status: 'completed' | 'active' | 'future' =
+                  habit.completed ? 'completed' : (index === nextIndex ? 'active' : 'future');
+
                 return (
-                  <motion.div
+                  <motion.button
                     key={habit.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex flex-col items-center gap-2 flex-1"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-lg min-w-[120px] md:min-w-[140px] neuro-interactive',
+                      status === 'completed'
+                        ? 'bg-emerald-600/10 border border-emerald-600/20'
+                        : status === 'active'
+                        ? 'bg-violet-700/10 border border-violet-500/20'
+                        : 'bg-card/40 border border-border'
+                    )}
+                    aria-pressed={status === 'active'}
+                    onClick={() => { /* open detail or focus — placeholder for future */ }}
                   >
-                    {/* Ícone do hábito */}
-                    <div
-                      className={`
-                        relative z-10 w-12 h-12 rounded-full flex items-center justify-center
-                        border-2 transition-all duration-300
-                        ${habit.completed 
-                          ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/50' 
-                          : 'bg-card border-border text-muted-foreground'
-                        }
-                      `}
+                    <div className={cn('flex items-center justify-center rounded-full', 'w-10 h-10') +
+                      (status === 'completed' ? ' bg-emerald-500 text-white' : status === 'active' ? ' bg-violet-500/90 text-white' : ' bg-slate-700/30 text-slate-300')}
                     >
-                      {habit.completed ? (
-                        <CheckCircle2 className="w-6 h-6" />
-                      ) : (
-                        <Circle className="w-6 h-6" />
-                      )}
+                      <IconComponent className="w-5 h-5" />
                     </div>
-                    
-                    {/* Nome do hábito */}
-                    <div className="text-center">
-                      <p className={`text-xs font-medium truncate max-w-[80px] ${
-                        habit.completed ? 'text-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {habit.title}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn('text-sm truncate', status === 'future' ? 'text-muted-foreground' : 'text-foreground font-semibold')}>{habit.title}</p>
+                        {status === 'completed' && <Check className="w-4 h-4 text-emerald-500" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {habit.completed && habit.completedAt
+                          ? new Date(habit.completedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                          : '—'}
                       </p>
-                      {habit.completed && habit.completedAt && (
-                        <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 mt-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(habit.completedAt).toLocaleTimeString('pt-BR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </p>
-                      )}
                     </div>
-                  </motion.div>
+                  </motion.button>
                 );
               })}
             </div>

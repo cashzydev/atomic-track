@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
-import { FloatingActionButton } from '@/components/FloatingActionButton';
+// FloatingActionButton removed from this page to avoid floating CTA on 'Meus Hábitos'
 import { useHabits } from '@/hooks/useHabits';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useRole } from '@/hooks/useRole';
@@ -123,8 +123,7 @@ export default function HabitsPage() {
             Novo Hábito
           </Button>
 
-          {/* FAB - Mobile only */}
-          <FloatingActionButton onClick={handleCreateHabit} />
+          {/* Floating action button removed for this page (mobile UX tweak) */}
 
           {/* Stats Bar + Filters */}
           {totalHabits > 0 && (

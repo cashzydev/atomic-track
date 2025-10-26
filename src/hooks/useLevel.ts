@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { calculateLevel, checkLevelUp, type LevelUpResult } from '@/systems/levelSystem';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

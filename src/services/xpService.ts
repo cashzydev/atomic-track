@@ -61,7 +61,7 @@ export const identityVotesService = {
           if (attempts >= maxAttempts) {
             // Fallback para XP base
             xpData = { 
-              total_xp: 15, 
+              total_xp: 25, 
               reasons: ['Hábito completado (fallback)'] 
             };
           }
@@ -71,7 +71,7 @@ export const identityVotesService = {
       // Garantir fallback se ainda não tiver XP
       if (!xpData) {
         xpData = { 
-          total_xp: 15, 
+          total_xp: 25, 
           reasons: ['Hábito completado (base)'] 
         };
       }

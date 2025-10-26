@@ -34,17 +34,13 @@ export const HabitStatsBar = ({
 }: HabitStatsBarProps) => {
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-card border border-border rounded-lg">
-      {/* Search */}
+      {/* Search (icon removed as requested) */}
       <div className="flex-1 relative">
-        <Search 
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" 
-          size={16} 
-        />
         <Input
           placeholder="Buscar..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 h-9"
+          className="h-9"
         />
       </div>
 

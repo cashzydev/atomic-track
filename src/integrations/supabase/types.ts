@@ -205,54 +205,35 @@ export type Database = {
       profiles: {
         Row: {
           avatar_color: string | null
-          avatar_icon: string | null
           avatar_type: string | null
-          avatar_url: string | null
           created_at: string
-          desired_identity: string | null
+          email: string
           id: string
-          language: string | null
           level: number | null
-          longest_streak: number
-          name: string
-          points: number
-          specific_change: string | null
+          name: string | null
           tier: string | null
           updated_at: string
           xp: number | null
         }
         Insert: {
           avatar_color?: string | null
-          avatar_icon?: string | null
           avatar_type?: string | null
-          avatar_url?: string | null
           created_at?: string
-          desired_identity?: string | null
+          email: string
           id: string
-          language?: string | null
           level?: number | null
-          longest_streak?: number
-          name: string
-          points?: number
-          specific_change?: string | null
+          name?: string | null
           tier?: string | null
           updated_at?: string
           xp?: number | null
         }
         Update: {
           avatar_color?: string | null
-          avatar_icon?: string | null
           avatar_type?: string | null
-          avatar_url?: string | null
           created_at?: string
-          desired_identity?: string | null
-          id?: string
-          language?: string | null
+          email?: string
           level?: number | null
-          longest_streak?: number
-          name?: string
-          points?: number
-          specific_change?: string | null
+          name?: string | null
           tier?: string | null
           updated_at?: string
           xp?: number | null

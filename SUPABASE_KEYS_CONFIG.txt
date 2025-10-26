@@ -1,0 +1,14 @@
+# Configuração das Chaves Supabase
+# Database: ifuhypkkmkaklkmcypmc
+
+# Crie um arquivo .env.local na raiz do projeto com o seguinte conteúdo:
+
+VITE_SUPABASE_URL=https://ifuhypkkmkaklkmcypmc.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmdWh5cGtrbWtha2xrbWN5cG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExMjU3MDMsImV4cCI6MjA3NjcwMTcwM30.HRD7861tiwow_Tf7bBEGZwVbLtW3cRUj-gSvsfs1lzw
+VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmdWh5cGtrbWtha2xrbWN5cG1jIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTEyNTcwMywiZXhwIjoyMDc2NzAxNzAzfQ.FFkMsVDaCjnzhw0rY8TeMPAyXyrimIlcga7LhNjXvbk
+
+# Instruções:
+# 1. Crie o arquivo .env.local na raiz do projeto
+# 2. Cole o conteúdo acima no arquivo
+# 3. Salve o arquivo
+# 4. Reinicie o servidor (npm run dev)

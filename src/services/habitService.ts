@@ -167,7 +167,7 @@ export const habitService = {
           percentage,
           completed_at: new Date().toISOString()
         }, {
-          onConflict: 'habit_id,date'
+          onConflict: 'habit_id,user_id,date'
         });
 
       if (completionError) throw completionError;

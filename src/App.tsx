@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "@/i18n/config";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import HabitsPage from "./pages/HabitsPage";
@@ -34,6 +35,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<ProtectedRoute requireAuth={false}><Landing /></ProtectedRoute>} />
         <Route path="/auth" element={<ProtectedRoute requireAuth={false}><Auth /></ProtectedRoute>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/onboarding" element={<ProtectedRoute requireAuth><Onboarding /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute requireAuth requireOnboarding><Dashboard /></ProtectedRoute>} />
         <Route path="/habits" element={<ProtectedRoute requireAuth requireOnboarding><HabitsPage /></ProtectedRoute>} />

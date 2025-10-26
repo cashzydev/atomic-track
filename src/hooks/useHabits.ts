@@ -29,6 +29,8 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
     refetchOnWindowFocus: true,
     refetchInterval: false,
     queryFn: async () => {
+      console.log('🔄 [useHabits] QueryFn executada');
+      
       if (!user) return [];
       
       const { data, error } = await habitService.getHabits(user.id);
@@ -52,35 +54,25 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       console.log('🔍 Querying for user_id:', user.id);
       console.log('📊 Total habits loaded:', filteredHabits.length);
       
-      // ⚡ USAR RPC para buscar completions com data server-side (com fallback)
+      // ⚡ USAR query direta para evitar problemas de cache da RPC
       let todayCompletions = null;
       
       try {
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_user_todays_completions', { p_user_id: user.id });
+        // Query direta para buscar completions de hoje (mais confiável)
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('habit_completions')
+          .select('habit_id, date, completed_at, percentage')
+          .eq('user_id', user.id)
+          .eq('date', today)
+          .gte('percentage', 100)
+          .order('completed_at', { ascending: false });
         
-        if (rpcError) {
-          console.warn('⚠️ [useHabits] RPC failed, using fallback query:', rpcError.message);
-          
-          // FALLBACK: usar query antiga se RPC falhar
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('habit_completions')
-            .select('habit_id, date, completed_at, percentage')
-            .eq('user_id', user.id)
-            .eq('date', today)
-            .gte('percentage', 100)
-            .order('completed_at', { ascending: false });
-          
-          if (fallbackError) {
-            console.error('❌ [useHabits] Fallback query also failed:', fallbackError);
-            todayCompletions = [];
-          } else {
-            todayCompletions = fallbackData || [];
-            console.log('✅ Using fallback query (client-side date)');
-          }
+        if (fallbackError) {
+          console.error('❌ [useHabits] Query direta falhou:', fallbackError);
+          todayCompletions = [];
         } else {
-          todayCompletions = rpcData || [];
-          console.log('✅ Using RPC (server-side date)');
+          todayCompletions = fallbackData || [];
+          console.log('✅ Usando query direta (client-side date)');
         }
       } catch (error) {
         console.error('❌ [useHabits] Error fetching completions:', error);
@@ -99,6 +91,13 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
         ...habit,
         completedToday: completedIds.has(habit.id)
       }));
+      
+      console.log('📋 [useHabits] Habits com status de completion:');
+      habitsWithCompletionStatus.forEach(h => {
+        console.log(`  - ${h.title}: completedToday = ${h.completedToday}`);
+      });
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       return habitsWithCompletionStatus;
     },
@@ -189,7 +188,10 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
     mutationFn: async ({ habitId, percentage, habitTitle }: { habitId: number; percentage: number; habitTitle: string }) => {
       if (!user) throw new Error('User not authenticated');
       
+      // Usar data do cliente para ser consistente com a query
       const today = new Date().toISOString().split('T')[0];
+      
+      console.log('🗓️ [completeHabitMutation] Usando data do cliente:', today);
       
       // 1. Completar hábito
       const result = await habitService.completeHabit(
@@ -288,64 +290,102 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
 
   const undoHabitMutation = useMutation({
     mutationFn: async (habitId: number) => {
+      console.log('🔄 [undoHabitMutation] Iniciando undo para habitId:', habitId);
+      
       if (!user) throw new Error('User not authenticated');
       
+      // Usar data do cliente para ser consistente com a query
       const today = new Date().toISOString().split('T')[0];
       
-      // Deletar completion de hoje
-      const { error } = await supabase
+      console.log('🗓️ [undoHabitMutation] Usando data do cliente:', today);
+      
+      console.log('🗑️ [undoHabitMutation] Deletando completion com data:', today);
+      
+      // Deletar completion usando a data do cliente
+      const { error, count } = await supabase
         .from('habit_completions')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('habit_id', habitId)
         .eq('user_id', user.id)
         .eq('date', today);
       
+      console.log('🗑️ [undoHabitMutation] Resultado da deleção:', { error, count });
+      
       if (error) throw error;
       
+      if (count === 0) {
+        console.warn('⚠️ [undoHabitMutation] Nenhuma completion foi deletada (count = 0)');
+      }
+      
+      console.log('📊 [undoHabitMutation] Recalculando streak...');
+      
+      // Recalcular streak usando a função RPC centralizada
+      const { data: streakData, error: streakError } = await supabase
+        .rpc('calculate_habit_streak', { p_habit_id: habitId });
+
+      console.log('📊 [undoHabitMutation] Resultado do cálculo de streak:', streakData, 'Error:', streakError);
+
+      if (streakError) {
+        console.error('❌ Erro ao recalcular streak:', streakError);
+        throw streakError;
+      }
+
+      const newStreak = streakData?.[0]?.current_streak || 0;
+      const newLongestStreak = streakData?.[0]?.longest_streak || 0;
+      
+      console.log('📝 [undoHabitMutation] Atualizando hábito com streak:', newStreak, 'longest:', newLongestStreak);
+      
       // Atualizar streak e last_completed no hábito
-      const { data: habitData } = await supabase
-        .from('habits')
-        .select('streak, longest_streak')
-        .eq('id', habitId)
-        .single();
-      
-      const newStreak = Math.max(0, (habitData?.streak || 0) - 1);
-      
-      await supabase
+      const { error: updateError } = await supabase
         .from('habits')
         .update({ 
           streak: newStreak,
-          last_completed: null 
+          longest_streak: newLongestStreak,
+          last_completed: newStreak > 0 ? null : null // Se streak = 0, last_completed pode ser null
         })
         .eq('id', habitId);
+      
+      console.log('📝 [undoHabitMutation] Resultado da atualização:', updateError);
+      
+      if (updateError) throw updateError;
+      
+      console.log('✅ [undoHabitMutation] Undo concluído com sucesso');
     },
-    onMutate: async (habitId) => {
-      const currentToday = new Date().toISOString().split('T')[0];
-      
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday) });
-      
-      const previousHabits = queryClient.getQueryData(QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday));
-      
-      // Optimistic update - desmarcar como completo e decrementar streak
-      queryClient.setQueryData(
-        QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
-        (old: any) => {
-          if (!old) return old;
-          return old.map((h: any) => 
-            h.id === habitId 
-              ? { ...h, completedToday: false, streak: Math.max(0, (h.streak || 0) - 1) }
-              : h
-          );
-        }
-      );
-      
-      return { previousHabits };
-    },
-    onError: (error: Error, variables, context) => {
-      const currentToday = new Date().toISOString().split('T')[0];
-      if (context?.previousHabits) {
-        queryClient.setQueryData(QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday), context.previousHabits);
-      }
+    // Removendo optimistic update temporariamente para debug
+    // onMutate: async (habitId) => {
+    //   const currentToday = new Date().toISOString().split('T')[0];
+    //   
+    //   await queryClient.cancelQueries({ queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday) });
+    //   
+    //   const previousHabits = queryClient.getQueryData(QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday));
+    //   
+    //   // Optimistic update - desmarcar como completo e recalcular streak
+    //   queryClient.setQueryData(
+    //     QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
+    //     (old: any) => {
+    //       if (!old) return old;
+    //       return old.map((h: any) => {
+    //         if (h.id === habitId) {
+    //           // Calcular novo streak baseado nas completions existentes
+    //           const currentStreak = h.streak || 0;
+    //           const newStreak = Math.max(0, currentStreak - 1);
+    //           
+    //           return { 
+    //             ...h, 
+    //             completedToday: false, 
+    //             streak: newStreak,
+    //             longest_streak: Math.max(h.longest_streak || 0, newStreak)
+    //           };
+    //         }
+    //         return h;
+    //       });
+    //     }
+    //   );
+    //   
+    //   return { previousHabits };
+    // },
+    onError: (error: Error) => {
+      console.error('❌ Erro ao desfazer hábito:', error);
       toast({
         title: 'Erro ao desfazer',
         description: error.message,
@@ -353,10 +393,14 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       });
     },
     onSuccess: async () => {
+      console.log('🎉 [undoHabitMutation] onSuccess iniciado');
+      
       toast({
         title: 'Hábito desmarcado',
         description: 'Conclusão removida com sucesso.',
       });
+      
+      console.log('🔄 [undoHabitMutation] Invalidando queries...');
       
       await Promise.all([
         queryClient.invalidateQueries({ 
@@ -367,11 +411,17 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
         queryClient.invalidateQueries({ queryKey: ['profile'] }),
       ]);
       
+      console.log('✅ [undoHabitMutation] Queries invalidadas');
+      
       const currentToday = new Date().toISOString().split('T')[0];
+      console.log('🔄 [undoHabitMutation] Refetching habits para data:', currentToday);
+      
       await queryClient.refetchQueries({ 
         queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
         type: 'active'
       });
+      
+      console.log('✅ [undoHabitMutation] Refetch concluído');
     },
   });
 
