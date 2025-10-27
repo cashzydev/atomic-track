@@ -49,8 +49,23 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       const habitsWithCompletionStatus = filteredHabits.map(habit => ({
         ...habit,
         // Hábito está completo se tem streak > 0 e last_completed é hoje
-        completedToday: habit.streak > 0 && habit.last_completed === today
+        // Extrair apenas a data do last_completed (formato ISO) para comparar
+        completedToday: habit.streak > 0 && habit.last_completed && habit.last_completed.split('T')[0] === today
       }));
+      
+      // DEBUG: Log para investigar o problema
+      console.log('🔍 [DEBUG] Query executada - Data:', today);
+      habitsWithCompletionStatus.forEach(h => {
+        const lastCompletedDate = h.last_completed ? h.last_completed.split('T')[0] : null;
+        console.log(`🔍 [DEBUG] Hábito ${h.id} (${h.title}):`, {
+          streak: h.streak,
+          last_completed: h.last_completed,
+          lastCompletedDate: lastCompletedDate,
+          goal_current: h.goal_current,
+          completedToday: h.completedToday,
+          condition: `${h.streak} > 0 && ${lastCompletedDate} === ${today} = ${h.streak > 0 && lastCompletedDate === today}`
+        });
+      });
       
       return habitsWithCompletionStatus;
     },
@@ -144,7 +159,7 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       const today = new Date().toISOString().split('T')[0];
       
       // Atualizar o estado do hábito
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('habits')
         .update({
           streak: 1,
@@ -153,8 +168,10 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
           updated_at: new Date().toISOString()
         })
         .eq('id', habitId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('*');
       
+      console.log('🔍 [DEBUG] CompleteHabit - Resultado:', { data, error });
       if (error) throw error;
 
       // 2. Conceder XP automaticamente
@@ -175,20 +192,24 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       // Snapshot previous value
       const previousHabits = queryClient.getQueryData(QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday));
       
-      // Optimistic update - marcar como completo e incrementar streak
+      // Optimistic update - marcar como completo e atualizar estado
       queryClient.setQueryData(
         QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
         (old: any) => {
           if (!old) return old;
           return old.map((h: any) => 
             h.id === habitId 
-              ? { ...h, completedToday: true, streak: (h.streak || 0) + 1 }
+              ? { 
+                  ...h, 
+                  completedToday: true, 
+                  streak: 1,
+                  last_completed: currentToday,
+                  goal_current: 100
+                }
               : h
           );
         }
       );
-      
-      console.log('✅ [useHabits] Optimistic update aplicado');
       
       return { previousHabits };
     },
@@ -233,10 +254,12 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       
       // Forçar refetch
       const currentToday = new Date().toISOString().split('T')[0];
+      console.log('🔍 [DEBUG] CompleteHabit onSuccess - Forçando refetch...');
       await queryClient.refetchQueries({ 
         queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
         type: 'active'
       });
+      console.log('🔍 [DEBUG] CompleteHabit onSuccess - Refetch concluído');
     },
   });
 
