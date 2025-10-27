@@ -30,8 +30,6 @@ import { ptBR, enUS } from "date-fns/locale";
 import { AnimatedPage } from "@/components/AnimatedPage";
 import { PageLoader } from "@/components/PageLoader";
 import { Plus, Atom } from "lucide-react";
-import DebugUndoHabit from "@/components/DebugUndoHabit";
-import SimpleUndoTest from "@/components/SimpleUndoTest";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -236,24 +234,13 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Debug Component - Temporário */}
+          {/* Teste Simples - Temporário */}
           <motion.div 
             className="relative"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.7 }}
           >
-            <DebugUndoHabit />
-          </motion.div>
-
-          {/* Simple Undo Test - Temporário */}
-          <motion.div 
-            className="relative"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-          >
-            <SimpleUndoTest />
           </motion.div>
 
           {/* Habit Timeline - Destaque Terciário */}
