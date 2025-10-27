@@ -53,20 +53,6 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
         completedToday: habit.streak > 0 && habit.last_completed && habit.last_completed.split('T')[0] === today
       }));
       
-      // DEBUG: Log para investigar o problema
-      console.log('🔍 [DEBUG] Query executada - Data:', today);
-      habitsWithCompletionStatus.forEach(h => {
-        const lastCompletedDate = h.last_completed ? h.last_completed.split('T')[0] : null;
-        console.log(`🔍 [DEBUG] Hábito ${h.id} (${h.title}):`, {
-          streak: h.streak,
-          last_completed: h.last_completed,
-          lastCompletedDate: lastCompletedDate,
-          goal_current: h.goal_current,
-          completedToday: h.completedToday,
-          condition: `${h.streak} > 0 && ${lastCompletedDate} === ${today} = ${h.streak > 0 && lastCompletedDate === today}`
-        });
-      });
-      
       return habitsWithCompletionStatus;
     },
   });
@@ -159,7 +145,7 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       const today = new Date().toISOString().split('T')[0];
       
       // Atualizar o estado do hábito
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('habits')
         .update({
           streak: 1,
@@ -168,10 +154,8 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
           updated_at: new Date().toISOString()
         })
         .eq('id', habitId)
-        .eq('user_id', user.id)
-        .select('*');
+        .eq('user_id', user.id);
       
-      console.log('🔍 [DEBUG] CompleteHabit - Resultado:', { data, error });
       if (error) throw error;
 
       // 2. Conceder XP automaticamente
@@ -254,21 +238,22 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       
       // Forçar refetch
       const currentToday = new Date().toISOString().split('T')[0];
-      console.log('🔍 [DEBUG] CompleteHabit onSuccess - Forçando refetch...');
       await queryClient.refetchQueries({ 
         queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
         type: 'active'
       });
-      console.log('🔍 [DEBUG] CompleteHabit onSuccess - Refetch concluído');
     },
   });
 
   // NOVA IMPLEMENTAÇÃO SIMPLES DE UNDO
   const undoHabitMutation = useMutation({
-    mutationFn: async (habitId: number) => {
+    mutationFn: async ({ habitId, habitTitle }: { habitId: number; habitTitle: string }) => {
       if (!user) throw new Error('User not authenticated');
       
-      // Atualizar o estado do hábito para pendente
+      // 1. Remover XP primeiro (antes de alterar o estado do hábito)
+      await xpService.removeHabitCompletionXP(user.id, habitId, habitTitle);
+      
+      // 2. Atualizar o estado do hábito para pendente
       const { error } = await supabase
         .from('habits')
         .update({
@@ -289,9 +274,15 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       });
       
       // Invalidar queries para atualizar a UI
-      await queryClient.invalidateQueries({ 
-        predicate: (query) => query.queryKey[0] === 'habits'
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ 
+          predicate: (query) => query.queryKey[0] === 'habits'
+        }),
+        queryClient.invalidateQueries({ queryKey: ['stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['weekly-data'] }),
+        queryClient.invalidateQueries({ queryKey: ['profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['level'] }),
+      ]);
       
       // Forçar refetch
       const currentToday = new Date().toISOString().split('T')[0];
@@ -345,9 +336,13 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
           });
           return;
         }
+        
+        // Chamar undo com habitTitle
+        undoHabitMutation.mutate({ habitId, habitTitle: habit.title });
+      } else {
+        // Fallback se não conseguir encontrar o hábito
+        undoHabitMutation.mutate({ habitId, habitTitle: 'Hábito' });
       }
-      
-      undoHabitMutation.mutate(habitId);
     },
 
     // Mutation States
