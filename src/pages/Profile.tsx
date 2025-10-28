@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -9,15 +9,14 @@ import { AnimatedPage } from '@/components/AnimatedPage';
 import { useLevel } from '@/hooks/useLevel';
 import { Progress } from '@/components/ui/progress';
 import LevelBadge from '@/components/LevelBadge';
-import { AvatarPicker } from '@/components/AvatarPicker';
 import BadgeDisplay from '@/components/BadgeDisplay';
 import { Target, Trophy, Flame, Calendar, Sparkles } from 'lucide-react';
 import { ICON_SIZES } from '@/config/iconSizes';
-import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
   const { level, xp, progress, levelInfo, currentLevelXP, nextLevelXP } = useLevel();
+  const queryClient = useQueryClient();
 
   // Fetch profile data
   const { data: profile } = useQuery({
@@ -80,33 +79,6 @@ export default function Profile() {
     enabled: !!user?.id,
   });
 
-  // Handle avatar update
-  const handleAvatarUpdate = async (
-    type: 'initials' | 'upload' | 'icon',
-    icon?: string,
-    color?: string,
-    url?: string
-  ) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          avatar_type: type,
-          avatar_icon: icon,
-          avatar_color: color,
-          avatar_url: url,
-        })
-        .eq('id', user?.id);
-
-      if (error) throw error;
-
-      toast.success('Avatar atualizado!');
-    } catch (error) {
-      console.error('Error updating avatar:', error);
-      toast.error('Erro ao atualizar avatar');
-    }
-  };
-
   if (!user) return null;
 
   const xpToNext = nextLevelXP - currentLevelXP;
@@ -128,8 +100,8 @@ export default function Profile() {
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 {/* Avatar Grande */}
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-4xl font-bold text-white border-4 border-violet-500/50">
-                    {profile?.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                  <div className="w-24 h-24 text-4xl rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-white border-4 border-violet-500/50 font-bold">
+                    {(profile?.name || user.email || 'U')[0]?.toUpperCase()}
                   </div>
                   <div className="absolute -bottom-2 -right-2">
                     <LevelBadge level={level} size="sm" />
@@ -209,19 +181,31 @@ export default function Profile() {
           {/* Personalização de Avatar */}
           <Card>
             <CardHeader>
-              <CardTitle>Personalizar Avatar</CardTitle>
+              <CardTitle>Informações do Perfil</CardTitle>
               <CardDescription>
-                Escolha como você quer aparecer no app
+                Seus dados e estatísticas pessoais
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <AvatarPicker
-                currentType={(profile?.avatar_type as 'initials' | 'upload' | 'icon') || 'initials'}
-                currentIcon={profile?.avatar_icon || 'User'}
-                currentColor={profile?.avatar_color || 'violet'}
-                currentUrl={profile?.avatar_url || ''}
-                onUpdate={handleAvatarUpdate}
-              />
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Nome</label>
+                  <p className="text-lg font-semibold">{profile?.name || 'Usuário'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <p className="text-lg">{user.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Membro desde</label>
+                  <p className="text-lg">
+                    {new Date(user.created_at).toLocaleDateString('pt-BR', {
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

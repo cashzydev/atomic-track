@@ -1,61 +1,106 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Target, Sparkles, Rocket, PartyPopper } from "lucide-react";
+import { ArrowRight, Target, Sparkles, Rocket, PartyPopper, CheckCircle, TrendingUp, Clock, BarChart3 } from "lucide-react";
 import Button from "@/components/Button";
-import heroAtom from "@/assets/hero-atom.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
+
+  // Componente minimalista para as 4 leis
+  const LawCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
+    <div className="group p-6 rounded-xl border border-slate-800 hover:border-violet-500/30 transition-all duration-200 hover:translate-y-[-2px]">
+      <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center mb-4 group-hover:bg-violet-500/10 transition-colors">
+        <Icon className="w-6 h-6 text-slate-300 group-hover:text-violet-400" />
+      </div>
+      <h3 className="text-xl font-semibold text-slate-50 mb-2">{title}</h3>
+      <p className="text-slate-400 leading-relaxed">{description}</p>
+    </div>
+  );
+
+  // Componente para estatísticas sociais
+  const StatCard = ({ value, label }: { value: string, label: string }) => (
+    <div className="text-center">
+      <div className="text-3xl font-bold text-slate-50 mb-1">{value}</div>
+      <div className="text-sm text-slate-400">{label}</div>
+    </div>
+  );
+
+  // Componente para benefícios concretos
+  const BenefitCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
+    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-800/50 transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-5 h-5 text-violet-400" />
+      </div>
+      <div>
+        <h3 className="font-semibold text-slate-50 mb-1">{title}</h3>
+        <p className="text-sm text-slate-400">{description}</p>
+      </div>
+    </div>
+  );
 
   const laws = [
     {
       icon: Target,
       title: "Torne Óbvio",
-      description: "Crie gatilhos claros e impossíveis de ignorar",
-      color: "from-violet-600 to-purple-600"
+      description: "Crie gatilhos claros e impossíveis de ignorar"
     },
     {
       icon: Sparkles,
-      title: "Torne Atraente",
-      description: "Faça seus hábitos irresistíveis e prazerosos",
-      color: "from-purple-600 to-fuchsia-600"
+      title: "Torne Atraente", 
+      description: "Faça seus hábitos irresistíveis e prazerosos"
     },
     {
       icon: Rocket,
       title: "Torne Fácil",
-      description: "Comece pequeno com a Regra dos 2 Minutos",
-      color: "from-violet-500 to-purple-500"
+      description: "Comece pequeno com a Regra dos 2 Minutos"
     },
     {
       icon: PartyPopper,
       title: "Torne Satisfatório",
-      description: "Celebre cada vitória e construa momentum",
-      color: "from-fuchsia-600 to-violet-600"
+      description: "Celebre cada vitória e construa momentum"
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: BarChart3,
+      title: "Streaks Visuais",
+      description: "Veja seu progresso crescer dia após dia com gráficos intuitivos"
+    },
+    {
+      icon: Clock,
+      title: "Lembretes Inteligentes",
+      description: "Notificações no momento certo, sem spam ou interrupções"
+    },
+    {
+      icon: TrendingUp,
+      title: "Dashboard Simples",
+      description: "Tudo que você precisa em uma tela limpa e organizada"
+    },
+    {
+      icon: CheckCircle,
+      title: "Hábitos Empilhados",
+      description: "Conecte hábitos existentes para criar rotinas poderosas"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-900/20 to-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4">
+    <div className="min-h-screen bg-slate-950">
+      {/* Header Minimalista */}
+      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-sm border-b border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img 
-                src="/atom-logo.png" 
-                alt="atomicTracker" 
-                className="w-8 h-8 sm:w-9 sm:h-9 transition-all duration-300 hover:scale-110 hover:rotate-12"
-                style={{
-                  filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))'
-                }}
-              />
-              <span className="text-lg sm:text-2xl font-extrabold tracking-tighter gradient-text">atomicTracker</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">A</span>
+              </div>
+              <span className="text-xl font-semibold text-slate-50">atomicTracker</span>
             </div>
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => navigate("/auth")}
-              className="text-sm sm:text-base"
+              className="text-slate-300 hover:text-slate-50"
             >
               Entrar
             </Button>
@@ -63,125 +108,111 @@ const Landing = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 md:py-32">
-        <div className="text-center space-y-6 sm:space-y-8 animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter leading-tight">
-            <span className="gradient-text">Transforme sua vida</span>
-            <br />
-            <span className="text-slate-50">1% por dia</span>
-            <img
-              src="/atom-logo.png"
-              alt=""
-              className="w-12 h-12 sm:w-16 sm:h-16 ml-2 sm:ml-4 inline-block animate-float"
-              style={{
-                filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.6))"
-              }}
-            />
-          </h1>
-          
-          <p className="text-lg sm:text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto px-4">
-            Construa hábitos que duram usando as{" "}
-            <span className="text-violet-400 font-semibold">4 Leis da Mudança de Comportamento</span>
-          </p>
+      {/* Hero Section - Limpo e Direto */}
+      <section className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <h1 className="text-5xl md:text-6xl font-bold text-slate-50 mb-6 leading-tight">
+          Transforme sua vida
+          <br />
+          <span className="text-violet-400">1% por dia</span>
+        </h1>
+        
+        <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+          Construa hábitos que duram usando as 4 Leis da Mudança de Comportamento
+        </p>
 
-          <div className="pt-4 sm:pt-6">
-            <Button 
-              size="xl" 
-              onClick={() => navigate("/auth")}
-              className="group w-full sm:w-auto text-sm sm:text-base"
-            >
-              Começar Agora - Grátis
-              <ArrowRight className="ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
+        <Button 
+          size="lg" 
+          onClick={() => navigate("/auth")}
+          className="group"
+        >
+          Começar Agora - Grátis
+          <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Button>
+      </section>
 
-          {/* Hero Illustration */}
-          <div className="pt-12">
-            <div className="relative max-w-2xl mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-purple-600 rounded-3xl blur-3xl opacity-20 animate-pulse-violet" />
-              <img 
-                src={heroAtom} 
-                alt="Atomic Habits Visualization" 
-                className="relative w-full h-auto rounded-3xl shadow-2xl shadow-violet-900/50 animate-float"
-              />
-            </div>
-          </div>
+      {/* Social Proof - Logo Após Hero */}
+      <section className="max-w-4xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-3 gap-8 py-8 border-y border-slate-800">
+          <StatCard value="2.5K+" label="Usuários Ativos" />
+          <StatCard value="15K+" label="Hábitos Criados" />
+          <StatCard value="85%" label="Taxa de Sucesso" />
         </div>
       </section>
 
-      {/* 4 Laws Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h2 className="text-4xl font-bold text-center mb-4">
-          <span className="gradient-text">As 4 Leis</span>
-        </h2>
-        <p className="text-center text-slate-300 text-lg mb-16">
-          Cientificamente comprovadas para formar hábitos duradouros
-        </p>
+      {/* As 4 Leis - Grid Limpo */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-slate-50 mb-4">
+            As 4 Leis da Mudança
+          </h2>
+          <p className="text-slate-400 text-lg">
+            Cientificamente comprovadas para formar hábitos duradouros
+          </p>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-6 animate-slide-up">
+        <div className="grid md:grid-cols-2 gap-6">
           {laws.map((law, index) => (
-            <div
+            <LawCard
               key={index}
-              className="glass p-8 rounded-2xl hover:border-violet-500/50 hover:shadow-2xl hover:shadow-violet-500/20 hover-scale-sm transition-all duration-300"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${law.color} flex items-center justify-center mb-4 glow-violet`}>
-                <law.icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-50 mb-2">{law.title}</h3>
-              <p className="text-slate-300 text-lg">{law.description}</p>
-            </div>
+              icon={law.icon}
+              title={law.title}
+              description={law.description}
+            />
           ))}
         </div>
       </section>
 
-      {/* AI Coach Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="glass-violet p-12 rounded-3xl text-center space-y-6 border-2 animate-pulse-violet">
-          <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 flex items-center justify-center animate-spin-gradient">
-            <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-violet-400" />
-            </div>
-          </div>
-          
-          <h2 className="text-4xl font-bold gradient-text">
-            Seu Coach Pessoal 24/7
+      {/* Benefícios Concretos - Substituindo IA */}
+      <section className="max-w-4xl mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-slate-50 mb-4">
+            Tudo que você precisa
           </h2>
-          
-          <p className="text-xl text-slate-200 max-w-2xl mx-auto">
-            Nossa IA analisa seus padrões, detecta obstáculos e otimiza seu sistema 
-            automaticamente para maximizar suas chances de sucesso
+          <p className="text-slate-400 text-lg">
+            Ferramentas simples e eficazes para construir hábitos duradouros
           </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {benefits.map((benefit, index) => (
+            <BenefitCard
+              key={index}
+              icon={benefit.icon}
+              title={benefit.title}
+              description={benefit.description}
+            />
+          ))}
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="glass p-12 rounded-3xl text-center border-l-4 border-violet-500">
-          <p className="text-2xl md:text-3xl text-slate-200 font-semibold mb-4">
-            "1% melhor todo dia = 37x melhor em 1 ano"
-          </p>
-          <p className="text-lg text-violet-400">— James Clear, Hábitos Atômicos</p>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="max-w-7xl mx-auto px-6 py-20 pb-32">
-        <div className="text-center space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-50">
-            Pronto para sua transformação?
+      {/* CTA Final - Apenas se Necessário */}
+      <section className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <div className="bg-slate-900 rounded-2xl p-12 border border-slate-800">
+          <h2 className="text-3xl font-bold text-slate-50 mb-4">
+            Pronto para começar?
           </h2>
+          <p className="text-slate-400 mb-8">
+            Junte-se a milhares de pessoas que já transformaram suas vidas
+          </p>
           <Button 
-            size="xl" 
+            size="lg" 
             onClick={() => navigate("/auth")}
-            className="group animate-pulse-violet"
+            className="group"
           >
-            Começar Minha Jornada
-            <ArrowRight className="ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+            Criar Minha Conta
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </section>
+
+      {/* Footer Minimalista */}
+      <footer className="border-t border-slate-800 py-8">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <p className="text-slate-500 text-sm">
+            © 2024 atomicTracker. Transformando vidas, um hábito por vez.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

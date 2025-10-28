@@ -9,9 +9,14 @@ import { toast } from '@/hooks/use-toast';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 interface UserMenuProps {
   points?: number;
+  userProfile?: {
+    name?: string;
+    email?: string;
+  };
 }
 export function UserMenu({
-  points
+  points,
+  userProfile
 }: UserMenuProps) {
   const {
     user,
@@ -19,8 +24,6 @@ export function UserMenu({
   } = useAuth();
   const navigate = useNavigate();
   const userName = user?.user_metadata?.name || user?.email || 'User';
-  const initials = userName.split('@')[0] // Remove domain part if it's an email
-  .split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   const handleLogout = async () => {
     try {
       await signOut();
@@ -43,8 +46,10 @@ export function UserMenu({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500">
-            <span className="text-white font-semibold">{initials}</span>
+          <Button variant="ghost" className="relative w-8 h-8 sm:w-9 sm:h-9 p-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-white border-2 border-violet-500/50 font-bold text-sm hover:from-violet-500 hover:to-purple-500">
+              {(userProfile?.name || user?.user_metadata?.name || user?.email || 'U')[0]?.toUpperCase()}
+            </div>
           </Button>
         </DropdownMenuTrigger>
 

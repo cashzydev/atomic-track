@@ -39,7 +39,7 @@ const CoachAI = () => {
           <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center overflow-hidden">
             <img 
               src="/atom-logo.png" 
-              alt=""
+              alt="AI Coach"
               className="w-6 h-6 sm:w-8 sm:h-8 opacity-80"
               style={{
                 filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))',

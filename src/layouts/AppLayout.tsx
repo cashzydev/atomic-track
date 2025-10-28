@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { ProfileButton } from '@/components/ProfileButton';
-import { ProfileDrawer } from '@/components/ProfileDrawer';
+import { ProfileSheet } from '@/components/ProfileSheet';
 import { DailyProgress } from '@/components/DailyProgress';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +11,16 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getXPForLevel } from '@/systems/levelSystem';
 import { triggerHaptic } from '@/utils/haptics';
+import { calculateHabitStats } from '@/utils/statsCalculator';
 export function AppLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  return <AppLayoutContent>{children}</AppLayoutContent>;
+}
+
+function AppLayoutContent({
   children
 }: {
   children: React.ReactNode;
@@ -22,7 +31,7 @@ export function AppLayout({
   const {
     data: habits
   } = useHabits();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebar-open');
     return saved ? JSON.parse(saved) : true;
@@ -30,36 +39,56 @@ export function AppLayout({
   React.useEffect(() => {
     localStorage.setItem('sidebar-open', JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
-  const {
-    data: profile,
-    refetch: refetchProfile
-  } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const {
-        data,
-        error
-      } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
       if (error) throw error;
       return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Buscar completions para calcular stats
+  const { data: completions } = useQuery({
+    queryKey: ['completions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('habit_completions')
+        .select('date, habit_id, percentage')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!user?.id
   });
   if (!profile || !user) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   }
+
+  // Calcular XP e nível
   const xpForNextLevel = getXPForLevel(profile.level + 1);
   const xpForCurrentLevel = getXPForLevel(profile.level);
   const xpInCurrentLevel = (profile.xp || 0) - xpForCurrentLevel;
   const xpNeededForNext = xpForNextLevel - xpForCurrentLevel;
-  const userWithAvatar = {
+
+  // Calcular stats reais
+  const stats = calculateHabitStats(
+    completions || [],
+    habits?.filter(h => h.status === 'active').length || 0
+  );
+
+  const userData = {
     id: user.id,
     name: profile.name || 'Usuário',
-    avatar_type: profile.avatar_type as 'initials' | 'upload' | 'icon' || 'initials',
-    avatar_icon: profile.avatar_icon,
-    avatar_color: profile.avatar_color || 'violet',
-    avatar_url: profile.avatar_url,
+    email: user.email,
+    created_at: user.created_at,
     xp: profile.xp || 0,
     level: profile.level || 1
   };
@@ -87,7 +116,13 @@ export function AppLayout({
                 </div>}
 
               <div className="scale-90 md:scale-100">
-                <ProfileButton compact user={userWithAvatar} onClick={() => setDrawerOpen(true)} xpForNextLevel={xpForNextLevel} xpInCurrentLevel={xpInCurrentLevel} xpNeededForNext={xpNeededForNext} />
+                <ProfileButton 
+                  user={userData} 
+                  onClick={() => setSheetOpen(true)}
+                  xpForNextLevel={xpForNextLevel}
+                  xpInCurrentLevel={xpInCurrentLevel}
+                  xpNeededForNext={xpNeededForNext}
+                />
               </div>
             </div>
           </header>
@@ -100,7 +135,15 @@ export function AppLayout({
         {/* Bottom Navigation - Mobile only */}
         <BottomNavigation />
 
-        <ProfileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} user={userWithAvatar} xpForNextLevel={xpForNextLevel} xpInCurrentLevel={xpInCurrentLevel} xpNeededForNext={xpNeededForNext} onAvatarUpdate={refetchProfile} />
+        <ProfileSheet 
+          open={sheetOpen} 
+          onOpenChange={setSheetOpen} 
+          user={userData} 
+          stats={stats}
+          xpForNextLevel={xpForNextLevel}
+          xpInCurrentLevel={xpInCurrentLevel}
+          xpNeededForNext={xpNeededForNext}
+        />
       </div>
     </SidebarProvider>;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useMemo, useCallback } from "react";
 import { Check, Clock } from "lucide-react";
 import { Habit } from "@/types/habit";
 import { useHabits } from "@/hooks/useHabits";
@@ -15,11 +15,27 @@ interface HabitCardProps {
   isLoading?: boolean;
 }
 
-const HabitCard = ({ habit, isLoading }: HabitCardProps) => {
+const HabitCard = memo<HabitCardProps>(({ habit, isLoading }) => {
   const { user } = useAuth();
-  const { completeHabit, isCompleting, data: habits } = useHabits();
+  const { completeHabit, isCompleting } = useHabits();
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [previousStreak, setPreviousStreak] = useState(habit.streak);
+
+  // Memoizar cálculos pesados
+  const { isCompleted, progress, identityGoal, completionMessage } = useMemo(() => {
+    const userProfile = user?.user_metadata;
+    const identity = userProfile?.desired_identity || "quem você quer ser";
+    const completed = habit.completedToday || false;
+    const progressValue = habit.goal_target > 0 ? (habit.goal_current / habit.goal_target) * 100 : 0;
+    const message = `+1 voto para ${identity}`;
+
+    return {
+      isCompleted: completed,
+      progress: progressValue,
+      identityGoal: identity,
+      completionMessage: message
+    };
+  }, [habit.completedToday, habit.goal_current, habit.goal_target, user?.user_metadata]);
 
   // Detect broken streak
   useEffect(() => {
@@ -29,22 +45,13 @@ const HabitCard = ({ habit, isLoading }: HabitCardProps) => {
     setPreviousStreak(habit.streak);
   }, [habit.streak, previousStreak]);
 
-  if (isLoading) {
-    return <SkeletonCard />;
-  }
-
-  const userProfile = user?.user_metadata;
-  const identityGoal = userProfile?.desired_identity || "quem você quer ser";
-
-  const isCompleted = habit.completedToday || false; // ⚡ FASE 1: Usar completedToday
-  const progress = habit.goal_target > 0 ? (habit.goal_current / habit.goal_target) * 100 : 0;
-
-  const handleComplete = async () => {
+  // Memoizar handler de completar hábito
+  const handleComplete = useCallback(async () => {
     if (isCompleted) {
       return;
     }
     
-    // ⚡ FASE 4: Validação dupla antes de completar
+    // Validação dupla antes de completar
     const today = new Date().toISOString().split('T')[0];
     const { data: existing } = await supabase
       .from('habit_completions')
@@ -67,12 +74,11 @@ const HabitCard = ({ habit, isLoading }: HabitCardProps) => {
 
     // Trigger atomic animation
     triggerAtomicAnimation();
-  };
+  }, [isCompleted, habit.id, habit.title, completeHabit]);
 
-  // Identity-based micro-copy
-  const getCompletionMessage = () => {
-    return `+1 voto para ${identityGoal}`;
-  };
+  if (isLoading) {
+    return <SkeletonCard />;
+  }
 
   return (
     <>
@@ -138,7 +144,7 @@ const HabitCard = ({ habit, isLoading }: HabitCardProps) => {
                 ✨ Completado
               </span>
               <span className="text-slate-400 font-medium text-xs">
-                {getCompletionMessage()}
+                {completionMessage}
               </span>
             </div>
             {habit.last_completed && (
@@ -201,6 +207,8 @@ const HabitCard = ({ habit, isLoading }: HabitCardProps) => {
       />
     </>
   );
-};
+});
+
+HabitCard.displayName = 'HabitCard';
 
 export default HabitCard;

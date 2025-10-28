@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   BookOpen,
   Dumbbell,
@@ -31,10 +31,11 @@ import {
   Sparkles,
   Trophy,
   Atom,
+  Coffee,
   type LucideIcon,
 } from 'lucide-react';
 
-// Mapeamento de nomes de ícones para componentes
+// Mapeamento de nomes de ícones para componentes - otimizado para tree-shaking
 const LUCIDE_ICONS: Record<string, LucideIcon> = {
   BookOpen,
   Dumbbell,
@@ -67,6 +68,7 @@ const LUCIDE_ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Trophy,
   Atom,
+  Coffee,
 };
 
 export const ICON_MAP = {
@@ -126,7 +128,8 @@ export interface IconProps {
   strokeWidth?: number;
 }
 
-export function Icon({ name, size = 20, className = '', strokeWidth = 2 }: IconProps) {
+// Componente Icon memoizado para evitar re-renders desnecessários
+export const Icon = memo<IconProps>(({ name, size = 20, className = '', strokeWidth = 2 }) => {
   // Find icon in all categories
   let IconComponent: LucideIcon | undefined;
 
@@ -144,7 +147,9 @@ export function Icon({ name, size = 20, className = '', strokeWidth = 2 }: IconP
   }
 
   return <IconComponent size={size} className={className} strokeWidth={strokeWidth} />;
-}
+});
+
+Icon.displayName = 'Icon';
 
 // Export helper to get icon component by name string
 export function getIconComponent(iconName: string): LucideIcon {

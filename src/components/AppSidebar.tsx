@@ -59,7 +59,6 @@ export function AppSidebar() {
               src="/atom-logo.png" 
               alt="Logo" 
               className="relative w-8 h-8"
-              style={{ filter: 'brightness(1.1) saturate(1.3) hue-rotate(280deg) drop-shadow(0 0 8px rgba(139,92,246,0.6))' }}
             />
           </div>
           {open && (

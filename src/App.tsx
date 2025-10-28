@@ -25,7 +25,6 @@ import Settings from "./pages/Settings";
 import BadgesPage from "./pages/BadgesPage";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
-import HabitEditPage from "./pages/HabitEditPage";
 import HabitDetailPage from "./pages/HabitDetailPage";
 
 const queryClient = new QueryClient();
@@ -42,7 +41,6 @@ function AnimatedRoutes() {
         <Route path="/dashboard" element={<ProtectedRoute requireAuth requireOnboarding><Dashboard /></ProtectedRoute>} />
         <Route path="/habits" element={<ProtectedRoute requireAuth requireOnboarding><HabitsPage /></ProtectedRoute>} />
         <Route path="/habits/:id" element={<ProtectedRoute requireAuth requireOnboarding><HabitDetailPage /></ProtectedRoute>} />
-        <Route path="/habits/:id/edit" element={<ProtectedRoute requireAuth requireOnboarding><HabitEditPage /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute requireAuth requireOnboarding><CalendarPage /></ProtectedRoute>} />
         <Route path="/stats" element={<ProtectedRoute requireAuth requireOnboarding><StatsPage /></ProtectedRoute>} />
         <Route path="/badges" element={<ProtectedRoute requireAuth requireOnboarding><BadgesPage /></ProtectedRoute>} />

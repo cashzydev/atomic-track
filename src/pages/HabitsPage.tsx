@@ -9,6 +9,7 @@ import { useRole } from '@/hooks/useRole';
 import { PaywallModal } from '@/components/PaywallModal';
 import { Button } from '@/components/ui/button';
 import NewHabitModal from '@/components/NewHabitModal';
+import EditHabitModal from '@/components/EditHabitModal';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { AnimatedPage } from '@/components/AnimatedPage';
 import { PageLoader } from '@/components/PageLoader';
@@ -29,6 +30,8 @@ export default function HabitsPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'streak' | 'name' | 'completion'>('recent');
   const [isNewHabitModalOpen, setIsNewHabitModalOpen] = useState(false);
+  const [isEditHabitModalOpen, setIsEditHabitModalOpen] = useState(false);
+  const [editingHabitId, setEditingHabitId] = useState<number | null>(null);
   const [showHabitLimitModal, setShowHabitLimitModal] = useState(false);
   const [deleteHabitId, setDeleteHabitId] = useState<number | null>(null);
 
@@ -65,6 +68,11 @@ export default function HabitsPage() {
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
     });
+
+  const handleEdit = (id: number) => {
+    setEditingHabitId(id);
+    setIsEditHabitModalOpen(true);
+  };
 
   const handleDelete = async (id: number) => {
     setDeleteHabitId(id);
@@ -149,7 +157,7 @@ export default function HabitsPage() {
                 <HabitCard
                   key={habit.id}
                   habit={habit}
-                  onEdit={(id) => navigate(`/habits/${id}/edit`)}
+                  onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
               ))
@@ -167,6 +175,12 @@ export default function HabitsPage() {
           <NewHabitModal
             open={isNewHabitModalOpen}
             onOpenChange={setIsNewHabitModalOpen}
+          />
+
+          <EditHabitModal
+            open={isEditHabitModalOpen}
+            onOpenChange={setIsEditHabitModalOpen}
+            habitId={editingHabitId || 0}
           />
 
           <DeleteHabitDialog

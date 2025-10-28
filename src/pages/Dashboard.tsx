@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { triggerAtomicAnimation } from "@/utils/atomicParticles";
 import { triggerHaptic } from "@/utils/haptics";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DailyProgressCard } from "@/components/DailyProgressCard";
 import { HabitTimeline } from "@/components/HabitTimeline";
 import NewHabitModal from "@/components/NewHabitModal";
+import { useDebounce } from "@/hooks/usePerformance";
 
 interface TimelineHabit {
   id: number;
@@ -31,7 +32,7 @@ import { AnimatedPage } from "@/components/AnimatedPage";
 import { PageLoader } from "@/components/PageLoader";
 import { Plus, Atom } from "lucide-react";
 
-const Dashboard = () => {
+const Dashboard = memo(() => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const { data: habits, isLoading: habitsLoading, completeHabit, undoHabit } = useHabits();
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isNewHabitModalOpen, setIsNewHabitModalOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   // Get XP earned today from database
   const { data: xpEarnedToday } = useQuery({
@@ -56,20 +58,64 @@ const Dashboard = () => {
     enabled: !!user?.id,
   });
 
-  const dateLocale = i18n.language === 'en' ? enUS : ptBR;
+  // Memoizar cálculos pesados
+  const { dateLocale, userName, todayFormatted, timelineHabits, dashboardStats } = useMemo(() => {
+    const locale = i18n.language === 'en' ? enUS : ptBR;
+    const name = user?.user_metadata?.name || 'Usuário';
+    const today = format(new Date(), "EEEE, d 'de' MMMM", { locale });
+    
+    // Preparar dados da timeline
+    const timelineData = habits?.map(h => ({
+      id: h.id,
+      title: h.title,
+      icon: h.icon,
+      completed: h.completedToday || false,
+      completedAt: h.last_completed || undefined
+    })) as TimelineHabit[] || [];
 
-  // Keyboard shortcuts
+    // Calcular estatísticas do dashboard
+    const todayDate = new Date().toISOString().split('T')[0];
+    const completedToday = habits?.filter(h => h.completedToday).length || 0;
+    const activeStreaks = habits?.filter(h => {
+      if (!h.streak || h.streak === 0) return false;
+      return h.completedToday || h.last_completed;
+    }).length || 0;
+
+    // Preparar dados semanais para mini gráfico
+    const weeklyData = weeklyStats?.data?.days?.map(day => ({
+      day: day.day.substring(0, 3),
+      percentage: day.percentage
+    })) || [];
+
+    return {
+      dateLocale: locale,
+      userName: name,
+      todayFormatted: today,
+      timelineHabits: timelineData,
+      dashboardStats: {
+        completedToday,
+        activeStreaks,
+        xpEarned: xpEarnedToday || 0,
+        weeklyData
+      }
+    };
+  }, [i18n.language, user?.user_metadata?.name, habits, weeklyStats, xpEarnedToday]);
+
+  // Keyboard shortcuts com debounce
+  const debouncedOpenModal = useDebounce(() => setIsNewHabitModalOpen(true), 100);
+  
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'n' || e.key === 'N') {
-        setIsNewHabitModalOpen(true);
+        debouncedOpenModal();
       }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
-  const handleCompleteHabit = async (habitId: number) => {
+  }, [debouncedOpenModal]);
+  // Memoizar handlers para evitar re-criação desnecessária
+  const handleCompleteHabit = useCallback(async (habitId: number) => {
     const habit = habits?.find(h => h.id === habitId);
     if (!habit) return;
     await completeHabit({
@@ -92,14 +138,14 @@ const Dashboard = () => {
         }
       }
     });
-  };
+  }, [habits, completeHabit]);
 
-  const handleUndoHabit = async (habitId: number) => {
+  const handleUndoHabit = useCallback(async (habitId: number) => {
     undoHabit(habitId);
     toast.info("Conclusão desfeita", {
       duration: 2000
     });
-  };
+  }, [undoHabit]);
   if (!user) {
     navigate("/auth");
     return null;
@@ -110,26 +156,8 @@ const Dashboard = () => {
       </AppLayout>;
   }
   
-  const userName = user.user_metadata?.name || 'Usuário';
-  const todayFormatted = format(new Date(), "EEEE, d 'de' MMMM", { locale: dateLocale });
-  
-  // Calculate daily progress data
-  const today = new Date().toISOString().split('T')[0];
-  const completedToday = habits?.filter(h => h.completedToday).length || 0;
-  
-  const activeStreaks = habits?.filter(h => {
-    if (!h.streak || h.streak === 0) return false;
-    // Verify if habit was completed today or yesterday
-    return h.completedToday || h.last_completed;
-  }).length || 0;
-  
-  const xpEarned = xpEarnedToday || 0;
-  
-  // Prepare weekly data for mini graph
-  const weeklyData = weeklyStats?.data?.days?.map(day => ({
-    day: day.day.substring(0, 3), // D, S, T, Q, Q, S, S
-    percentage: day.percentage
-  })) || [];
+  // Usar dados memoizados
+  const { completedToday, activeStreaks, xpEarned, weeklyData } = dashboardStats;
 
   return <AppLayout>
       <AnimatedPage>
@@ -252,13 +280,7 @@ const Dashboard = () => {
           >
             <div className="relative bg-card rounded-2xl p-8 border">
               <HabitTimeline
-                habits={habits?.map(h => ({
-                  id: h.id,
-                  title: h.title,
-                  icon: h.icon,
-                  completed: h.completedToday || false,
-                  completedAt: h.last_completed || undefined
-                })) as TimelineHabit[] || []}
+                habits={timelineHabits}
               />
             </div>
           </motion.div>
@@ -269,5 +291,8 @@ const Dashboard = () => {
         <NewHabitModal open={isNewHabitModalOpen} onOpenChange={setIsNewHabitModalOpen} />
       </AnimatedPage>
     </AppLayout>;
-};
+});
+
+Dashboard.displayName = 'Dashboard';
+
 export default Dashboard;
