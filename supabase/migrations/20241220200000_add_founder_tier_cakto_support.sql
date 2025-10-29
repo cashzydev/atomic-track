@@ -122,3 +122,4 @@ $$;
 COMMENT ON FUNCTION public.has_paid_access IS 'Verifica se usuário tem acesso pago ativo (founder/pro/enterprise)';
 COMMENT ON FUNCTION public.process_cakto_payment IS 'Processa pagamento do Cakto de forma idempotente';
 
+

@@ -377,3 +377,4 @@ const handleUpdate = async () => {
 
 A refatoração garante que tanto a criação quanto a edição de hábitos sigam exatamente os mesmos princípios de UX minimalista, criando uma experiência coesa e intuitiva em toda a aplicação.
 
+

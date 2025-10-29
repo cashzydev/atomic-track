@@ -241,3 +241,4 @@ SUPABASE_SERVICE_ROLE_KEY=<chave_service_role>
 - Webhook URL: https://gkalmvozhjhnqwmzvuws.supabase.co/functions/v1/cakto-webhook
 - Webhook Secret: d2b87625-20a5-4ac8-a321-f7435fb825b9
 
+

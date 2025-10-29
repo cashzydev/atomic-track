@@ -70,3 +70,4 @@ BEGIN
   RAISE NOTICE '✅ Níveis corrigidos para % perfis', corrected_count;
 END $$;
 
+

@@ -351,3 +351,4 @@ const handleCreate = async () => {
 
 A refatoração elimina completamente a complexidade desnecessária mantendo toda a funcionalidade essencial, criando uma experiência de criação de hábitos rápida, intuitiva e agradável.
 
+

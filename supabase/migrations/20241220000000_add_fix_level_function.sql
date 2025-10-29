@@ -51,3 +51,4 @@ $$;
 -- Comentário para documentação
 COMMENT ON FUNCTION public.fix_user_level IS 'Corrige o nível de um usuário baseado no XP atual';
 
+

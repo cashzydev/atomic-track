@@ -39,3 +39,4 @@ WHERE id IN (
   SELECT id FROM auth.users WHERE email = 'lucasoliveiratnb0@gmail.com'
 );
 
+
