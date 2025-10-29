@@ -4,6 +4,19 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "atomictrack.com.br"
+        }
+      ],
+      "destination": "https://www.atomictrack.com.br/:1",
+      "permanent": true
+    }
   ]
 }
 

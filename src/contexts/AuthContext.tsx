@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getAppBaseUrl } from '@/utils/url';
 
 interface AuthContextType {
   user: User | null;
@@ -53,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [location.pathname, navigate]);
 
   const signUp = async (email: string, password: string, name: string) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
+    const redirectUrl = `${getAppBaseUrl()}/dashboard`;
     
     const { data: authData, error } = await supabase.auth.signUp({
       email,
@@ -104,15 +105,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
+    // Sempre usar www para garantir consistência
+    const redirectUrl = `${getAppBaseUrl()}/auth/callback`;
+    
+    console.log('🔐 Iniciando login Google OAuth');
+    console.log('📍 Redirect URL:', redirectUrl);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: redirectUrl
       }
     });
+    
     if (error) {
-      console.error('Error signing in with Google:', error);
-      // Opcional: Adicionar um toast de erro aqui
+      console.error('❌ Error signing in with Google:', error);
+      // O erro será capturado pelo toast no componente que chama
+    } else {
+      console.log('✅ OAuth redirect iniciado com sucesso');
     }
   };
 
