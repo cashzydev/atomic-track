@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Search, GripVertical, Plus, Target, Sparkles, Square, Clock, Flame } from 'lucide-react';
+import { CheckCircle2, Target, Square, Clock, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import HabitCardCompact from '../HabitCardCompact';
 import EmptyStateCard from '@/components/EmptyStateCard';
 import { triggerMiniAtomicAnimation } from '@/utils/atomicParticles';
@@ -34,7 +32,6 @@ const KanbanView: React.FC<KanbanViewProps> = ({
   onUndo,
   toggleElement
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [completingId, setCompletingId] = useState<number | null>(null);
   const handleComplete = (habitId: number) => {
     setCompletingId(habitId);
@@ -50,9 +47,8 @@ const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   // Filtrar hábitos baseado em completedToday
-  const filteredHabits = habits.filter(h => h.title.toLowerCase().includes(searchTerm.toLowerCase()));
-  const pendingHabits = filteredHabits.filter(h => !h.completedToday);
-  const completedHabits = filteredHabits.filter(h => h.completedToday);
+  const pendingHabits = habits.filter(h => !h.completedToday);
+  const completedHabits = habits.filter(h => h.completedToday);
   const completionPercentage = habits.length > 0 ? Math.round(completedHabits.length / habits.length * 100) : 0;
   const activeStreaks = habits.filter(h => h.streak > 0).length;
   
@@ -101,9 +97,9 @@ const KanbanView: React.FC<KanbanViewProps> = ({
           </div>
           <div className="text-center p-4 rounded-xl bg-slate-800/30 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
             <div className="flex items-center justify-center mb-2">
-              <Target className="w-4 h-4 text-violet-400" strokeWidth={2} />
+              <Target className="w-4 h-4 text-slate-400" strokeWidth={2} />
             </div>
-            <div className="text-xl font-bold text-violet-400">{completionPercentage}%</div>
+            <div className="text-xl font-bold text-foreground">{completionPercentage}%</div>
             <div className="text-xs text-muted-foreground">Taxa</div>
           </div>
         </div>
@@ -112,9 +108,19 @@ const KanbanView: React.FC<KanbanViewProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground font-medium">Progresso de Hoje</span>
-            <span className="text-violet-400 font-bold">{completionPercentage}%</span>
+            <span className="text-foreground font-bold">{completionPercentage}%</span>
           </div>
-          <Progress value={completionPercentage} className="h-3" />
+          <div className="w-full h-3 bg-slate-800/50 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${completionPercentage}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="h-full rounded-full shadow-[0_2px_8px_rgba(139,92,246,0.3)]"
+              style={{
+                background: 'linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247))'
+              }}
+            />
+          </div>
         </div>
       </motion.div>
 

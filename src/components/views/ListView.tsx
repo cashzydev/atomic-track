@@ -46,17 +46,17 @@ export const ListView: React.FC<ListViewProps> = ({
     <div className="space-y-6">
       {/* Container principal com métricas */}
       <div className="relative group">
-        {/* Glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-violet-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
         {/* Card principal - Neuromorfismo sem bordas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative bg-card/50 backdrop-blur-sm rounded-2xl p-6 lg:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35)] overflow-hidden"
+          className="relative rounded-2xl p-6 lg:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35)] overflow-hidden"
+          style={{
+            background: 'rgba(30, 41, 59, 0.5)',
+            backdropFilter: 'blur(8px)',
+            border: 'none'
+          }}
         >
-          {/* Background gradiente sutil */}
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-purple-500/3 to-transparent opacity-50" />
           
           <div className="relative space-y-6">
             {/* Header com título */}
@@ -86,9 +86,9 @@ export const ListView: React.FC<ListViewProps> = ({
               </div>
               <div className="text-center p-4 rounded-xl bg-slate-800/30 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
                 <div className="flex items-center justify-center mb-2">
-                  <Target className="w-4 h-4 text-violet-400" strokeWidth={2} />
+                  <Target className="w-4 h-4 text-slate-400" strokeWidth={2} />
                 </div>
-                <div className="text-xl font-bold text-violet-400">{completionPercentage}%</div>
+                <div className="text-xl font-bold text-foreground">{completionPercentage}%</div>
                 <div className="text-xs text-muted-foreground">Taxa</div>
               </div>
             </div>
@@ -97,14 +97,17 @@ export const ListView: React.FC<ListViewProps> = ({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground font-medium">Progresso de Hoje</span>
-                <span className="text-violet-400 font-bold">{completionPercentage}%</span>
+                <span className="text-foreground font-bold">{completionPercentage}%</span>
               </div>
-              <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-3 bg-slate-800/50 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${completionPercentage}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                  className="h-full rounded-full shadow-[0_2px_8px_rgba(139,92,246,0.3)]"
+                  style={{
+                    background: 'linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247))'
+                  }}
                 />
               </div>
             </div>

@@ -253,8 +253,6 @@ const Dashboard = memo(() => {
             transition={{ delay: 0.5 }}
             className="relative"
           >
-            {/* Subtle border glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-transparent to-purple-500/10 rounded-2xl blur-sm" />
             <div className="relative">
               {/* Renderização condicional da view */}
               <motion.div

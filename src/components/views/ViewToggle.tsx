@@ -19,9 +19,18 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         className={cn(
           "flex items-center gap-1.5 px-2 py-1 rounded transition-all duration-200",
           currentView === 'list'
-            ? "bg-violet-500/20 text-violet-400"
+            ? "bg-slate-700/50 text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
             : "text-muted-foreground hover:text-foreground hover:bg-slate-700/30"
         )}
+        style={
+          currentView === 'list'
+            ? {
+                background: 'rgba(51, 65, 85, 0.5)',
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+              }
+            : undefined
+        }
         aria-label="Visualização em lista"
       >
         <List className="w-3.5 h-3.5" strokeWidth={2} />
@@ -37,9 +46,18 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         className={cn(
           "flex items-center gap-1.5 px-2 py-1 rounded transition-all duration-200",
           currentView === 'kanban'
-            ? "bg-violet-500/20 text-violet-400"
+            ? "bg-slate-700/50 text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
             : "text-muted-foreground hover:text-foreground hover:bg-slate-700/30"
         )}
+        style={
+          currentView === 'kanban'
+            ? {
+                background: 'rgba(51, 65, 85, 0.5)',
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+              }
+            : undefined
+        }
         aria-label="Visualização kanban"
       >
         <LayoutGrid className="w-3.5 h-3.5" strokeWidth={2} />
