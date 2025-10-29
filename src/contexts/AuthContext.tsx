@@ -25,12 +25,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const location = useLocation();
 
   useEffect(() => {
-    setLoading(true); // Garante que o loading é reativado se o contexto for remontado
+    setLoading(true);
+    
+    // PRÁTICA RECOMENDADA: Buscar sessão inicial antes de configurar o listener
+    // Isso garante que sessões existentes sejam detectadas imediatamente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      // Não redirecionar se estiver na rota de callback - o AuthCallback já cuida disso
+      if (session?.user && !location.pathname.includes('/auth/callback')) {
+        const onboardingCompleted = session.user.user_metadata?.onboarding_completed;
+        if (!onboardingCompleted && location.pathname !== '/onboarding') {
+          navigate('/onboarding');
+        } else if (onboardingCompleted && location.pathname !== '/dashboard' && !location.pathname.startsWith('/auth')) {
+          navigate('/dashboard');
+        }
+      }
+    });
+
+    // Configurar listener para mudanças futuras no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false); // <--- PONTO CHAVE
+        setLoading(false);
 
         // Não redirecionar se estiver na rota de callback - o AuthCallback já cuida disso
         if (session?.user && !location.pathname.includes('/auth/callback')) {
@@ -44,6 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Initialize user badges
           supabase.rpc('initialize_user_badges', { p_user_id: session.user.id });
+        } else if (!session) {
+          // Se não há sessão, garantir que loading seja false
+          setLoading(false);
         }
       }
     );

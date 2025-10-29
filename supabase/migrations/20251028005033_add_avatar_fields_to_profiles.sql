@@ -57,3 +57,4 @@ COMMENT ON COLUMN public.profiles.avatar_color IS 'Color theme for the avatar';
 
 
 
+

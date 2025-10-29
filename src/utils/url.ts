@@ -37,3 +37,4 @@ export const getAppBaseUrl = (): string => {
   return normalizeAppUrl();
 };
 
+
