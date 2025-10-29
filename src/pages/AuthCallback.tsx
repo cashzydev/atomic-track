@@ -9,6 +9,11 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // Processar tokens do hash da URL (OAuth retorna tokens no hash)
+        // O Supabase processa automaticamente, mas vamos esperar um pouco para garantir
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Obter a sessão atual
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -55,6 +60,8 @@ const AuthCallback: React.FC = () => {
             navigate('/onboarding');
           }
         } else {
+          // Limpar hash da URL e redirecionar
+          window.location.hash = '';
           navigate('/auth');
         }
       } catch (error) {
