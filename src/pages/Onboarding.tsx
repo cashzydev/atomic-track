@@ -55,11 +55,8 @@ const Onboarding = () => {
               src="/atom-logo.png"
               alt=""
               className="w-8 h-8 sm:w-12 sm:h-12 animate-float"
-              style={{
-                filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.6))"
-              }}
             />
-            <span className="text-2xl sm:text-3xl font-bold gradient-text">atomicTracker</span>
+            <span className="text-2xl sm:text-3xl font-bold gradient-text">atomicTrack</span>
           </div>
           
           <ProgressIndicator currentStep={currentStep} totalSteps={totalSteps} className="scale-75 sm:scale-100" />

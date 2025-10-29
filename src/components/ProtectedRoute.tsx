@@ -1,17 +1,20 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { PaymentGuard } from '@/components/PaymentGuard';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
   requireOnboarding?: boolean;
+  requirePayment?: boolean;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requireAuth = true,
-  requireOnboarding = false 
+  requireOnboarding = false,
+  requirePayment = false
 }) => {
   const { user, loading } = useAuth();
 
@@ -23,9 +26,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             src="/atom-logo.png" 
             alt="Loading" 
             className="w-16 h-16 mx-auto mb-4 animate-pulse"
-            style={{
-              filter: 'drop-shadow(0 0 30px rgba(124, 58, 237, 0.8))'
-            }}
           />
           <p className="text-slate-300">Carregando...</p>
         </div>
@@ -46,6 +46,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Handle onboarding requirement
   if (requireOnboarding && user?.user_metadata?.onboarding_completed !== true) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  // Handle payment requirement
+  if (requirePayment) {
+    return <PaymentGuard requirePayment={true}>{children}</PaymentGuard>;
   }
 
   return <>{children}</>;

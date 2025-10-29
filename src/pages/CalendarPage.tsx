@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useHabits } from '@/hooks/useHabits';
 import { AppLayout } from '@/layouts/AppLayout';
 import { PageLoader } from '@/components/PageLoader';
@@ -38,21 +39,26 @@ const CalendarPage = () => {
   return (
     <AppLayout>
       <AnimatedPage>
-        <div className="space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
+          <motion.div 
+            className="flex items-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center shadow-[0_2px_10px_rgba(139,92,246,0.15)]">
+              <Calendar className="w-6 h-6 text-violet-400" strokeWidth={2} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                 Calendário de Hábitos
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground/80 mt-1.5 leading-relaxed">
                 Um pequeno passo por dia, uma jornada transformadora por ano
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Calendário com bloqueio */}
           <FeatureLock feature="calendar">

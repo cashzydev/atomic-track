@@ -121,19 +121,65 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
     mutationFn: async (id: number) => {
       const result = await habitService.deleteHabit(id);
       if (result.error) throw result.error;
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habits', user?.id] });
+    onMutate: async (id: number) => {
+      const currentToday = new Date().toISOString().split('T')[0];
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday) });
+      
+      // Snapshot previous value
+      const previousHabits = queryClient.getQueryData(QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday));
+      
+      // Optimistic update - remover hábito imediatamente da UI
+      queryClient.setQueryData(
+        QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
+        (old: any) => {
+          if (!old) return old;
+          return old.filter((h: any) => h.id !== id);
+        }
+      );
+      
+      return { previousHabits, deletedId: id };
+    },
+    onSuccess: (deletedId, variables, context) => {
+      // Notificação única apenas quando sucesso
       toast({
         title: 'Hábito deletado',
         description: 'O hábito foi removido com sucesso.',
+        duration: 3000,
       });
+      
+      // Invalidar queries para garantir sincronização
+      const currentToday = new Date().toISOString().split('T')[0];
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'habits'
+      });
+      
+      // Invalidar queries relacionadas
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['weekly-data'] }),
+      ]);
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables, context) => {
+      const currentToday = new Date().toISOString().split('T')[0];
+      
+      // Rollback on error - restaurar hábito na UI
+      if (context?.previousHabits) {
+        queryClient.setQueryData(
+          QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday), 
+          context.previousHabits
+        );
+      }
+      
+      // Notificação única de erro
       toast({
         title: 'Erro ao deletar hábito',
         description: error.message,
         variant: 'destructive',
+        duration: 4000,
       });
     },
   });
@@ -210,22 +256,22 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
       });
     },
     onSuccess: async (xpResult, { habitId, habitTitle }) => {
-      // 1. Toast
+      // 1. Toast IMEDIATO - mostrar antes de qualquer delay
       if (xpResult?.levelUp) {
         toast({
           title: "🎊 LEVEL UP!",
           description: `Você alcançou o nível ${xpResult.newLevel}!`,
+          duration: 6000,
         });
       } else {
         toast({
           title: `${habitTitle} completado! 🎉`,
           description: `+${xpResult.newVoteCount} XP`,
+          duration: 4000,
         });
       }
       
-      // ⚡ PARTE 5: Invalidação completa incluindo level
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // 2. Invalidar queries IMEDIATAMENTE (sem delay)
       await Promise.all([
         queryClient.invalidateQueries({ 
           predicate: (query) => query.queryKey[0] === 'habits'
@@ -233,15 +279,19 @@ export function useHabits(status?: 'active' | 'archived' | 'pending') {
         queryClient.invalidateQueries({ queryKey: ['stats'] }),
         queryClient.invalidateQueries({ queryKey: ['weekly-data'] }),
         queryClient.invalidateQueries({ queryKey: ['profile'] }),
-        queryClient.invalidateQueries({ queryKey: ['level'] }), // PARTE 5: Invalidar level
+        queryClient.invalidateQueries({ queryKey: ['level'] }),
       ]);
       
-      // Forçar refetch
+      // 3. Refetch crítico para garantir dados atualizados
       const currentToday = new Date().toISOString().split('T')[0];
-      await queryClient.refetchQueries({ 
-        queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
-        type: 'active'
-      });
+      await Promise.all([
+        queryClient.refetchQueries({ 
+          queryKey: QUERY_KEYS.userHabits(user?.id || '', status || 'all', currentToday),
+          type: 'active'
+        }),
+        queryClient.refetchQueries({ queryKey: ['profile'] }),
+        queryClient.refetchQueries({ queryKey: ['level'] }),
+      ]);
     },
   });
 

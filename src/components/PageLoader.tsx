@@ -6,11 +6,10 @@ export function PageLoader() {
       <div className="relative">
         {/* Núcleo */}
         <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full animate-pulse flex items-center justify-center">
-          <img 
+          <img
             src="/atom-logo.png" 
             alt="Loading" 
             className="w-8 h-8"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.8))' }}
           />
         </div>
         

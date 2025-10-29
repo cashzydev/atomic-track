@@ -1,5 +1,5 @@
 -- ============================================
--- ATOMICTRACKER DATABASE SCHEMA
+-- ATOMICTRACK DATABASE SCHEMA
 -- ============================================
 
 -- 1. PROFILES TABLE

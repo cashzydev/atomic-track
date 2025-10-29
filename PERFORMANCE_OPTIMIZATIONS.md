@@ -231,3 +231,4 @@ const LazyReports = lazy(() => import('@/pages/Reports'));
 
 **Resultado**: Aplicação significativamente mais rápida e responsiva, especialmente em dispositivos móveis e de baixo desempenho. 🎉
 
+

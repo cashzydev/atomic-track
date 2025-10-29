@@ -75,7 +75,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               
               <motion.img
                 src={atomLogo}
-                alt="atomicTracker Pro"
+                alt="atomicTrack Pro"
                 className="w-16 h-16 sm:w-20 sm:h-20 relative z-10"
                 initial={{ scale: 0, rotate: -180, opacity: 0 }}
                 animate={{ 

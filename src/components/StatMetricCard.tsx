@@ -15,13 +15,14 @@ const StatMetricCard = ({ icon, title, value, subtitle, className }: StatMetricC
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
       className={cn(
-        "rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4",
+        "rounded-xl bg-card/50 backdrop-blur-sm p-5 shadow-[0_4px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)]",
         className
       )}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 text-violet-400 shadow-[0_2px_10px_rgba(139,92,246,0.15)]">
           {icon}
         </div>
       </div>

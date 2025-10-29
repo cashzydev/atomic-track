@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
 // FloatingActionButton removed from this page to avoid floating CTA on 'Meus Hábitos'
 import { useHabits } from '@/hooks/useHabits';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useRole } from '@/hooks/useRole';
-import { PaywallModal } from '@/components/PaywallModal';
 import { Button } from '@/components/ui/button';
 import NewHabitModal from '@/components/NewHabitModal';
 import EditHabitModal from '@/components/EditHabitModal';
@@ -18,21 +14,16 @@ import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
 import { HabitCard } from '@/components/habits/HabitCard';
 import { HabitStatsBar } from '@/components/habits/HabitStatsBar';
 import { Card } from '@/components/ui/card';
-import { calculateCompletionRate } from '@/utils/habitMetrics';
 
 
 export default function HabitsPage() {
-  const navigate = useNavigate();
   const { data: habits, deleteHabit, isLoading } = useHabits();
-  const { isPro, isFree } = useSubscription();
-  const { isAdmin } = useRole();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'streak' | 'name' | 'completion'>('recent');
   const [isNewHabitModalOpen, setIsNewHabitModalOpen] = useState(false);
   const [isEditHabitModalOpen, setIsEditHabitModalOpen] = useState(false);
   const [editingHabitId, setEditingHabitId] = useState<number | null>(null);
-  const [showHabitLimitModal, setShowHabitLimitModal] = useState(false);
   const [deleteHabitId, setDeleteHabitId] = useState<number | null>(null);
 
   // Find the habit to delete for the dialog
@@ -90,11 +81,6 @@ export default function HabitsPage() {
   };
 
   const handleCreateHabit = () => {
-    // Checar limite de 3 hábitos para usuários free (admins não têm limite)
-    if (!isAdmin && isFree && totalHabits >= 3) {
-      setShowHabitLimitModal(true);
-      return;
-    }
     setIsNewHabitModalOpen(true);
   };
 
@@ -188,13 +174,6 @@ export default function HabitsPage() {
             habitTitle={habitToDelete?.title || ''}
             onConfirm={confirmDelete}
             onCancel={cancelDelete}
-          />
-
-          <PaywallModal
-            open={showHabitLimitModal}
-            onOpenChange={setShowHabitLimitModal}
-            emphasize="habits"
-            trigger="habit_limit_reached"
           />
         </div>
       </AnimatedPage>

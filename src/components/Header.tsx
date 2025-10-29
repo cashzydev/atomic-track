@@ -12,14 +12,11 @@ export function Header() {
           <div className="flex items-center gap-2 sm:gap-3">
             <img 
               src="/atom-logo.png" 
-              alt="atomicTracker"
+              alt="atomicTrack"
               className="w-8 h-8 sm:w-9 sm:h-9 logo-atom"
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))'
-              }}
             />
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-              atomicTracker
+              atomicTrack
             </span>
           </div>
 

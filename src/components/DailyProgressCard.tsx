@@ -37,7 +37,7 @@ export const DailyProgressCard: React.FC<DailyProgressCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className="p-6 space-y-6">
+      <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 space-y-6 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Linha do Tempo do Dia</h2>
@@ -114,32 +114,32 @@ export const DailyProgressCard: React.FC<DailyProgressCardProps> = ({
         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="flex flex-col items-center p-3 rounded-lg bg-primary/5 border border-primary/10"
+            className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/5 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
           >
-            <CheckCircle2 className="w-5 h-5 text-primary mb-2" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 mb-2" strokeWidth={2} />
             <span className="text-xl font-bold text-foreground">{completedToday}</span>
             <span className="text-xs text-muted-foreground">Completados</span>
           </motion.div>
 
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="flex flex-col items-center p-3 rounded-lg bg-orange-500/5 border border-orange-500/10"
+            className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
           >
-            <Flame className="w-5 h-5 text-orange-500 mb-2" />
+            <Flame className="w-5 h-5 text-amber-400 mb-2" strokeWidth={2} />
             <span className="text-xl font-bold text-foreground">{activeStreaks}</span>
             <span className="text-xs text-muted-foreground">Streaks</span>
           </motion.div>
 
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="flex flex-col items-center p-3 rounded-lg bg-primary/5 border border-primary/10"
+            className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/5 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
           >
-            <Zap className="w-5 h-5 text-primary mb-2" />
+            <Zap className="w-5 h-5 text-violet-400 mb-2" strokeWidth={2} />
             <span className="text-xl font-bold text-foreground">{xpEarned}</span>
             <span className="text-xs text-muted-foreground">XP</span>
           </motion.div>
         </div>
-      </Card>
+      </div>
     </motion.div>
   );
 };

@@ -113,10 +113,13 @@ export const identityVotesService = {
       const newLevelInfo = calculateLevel(newXP);
       const didLevelDown = newLevelInfo.level < oldLevelInfo.level;
 
-      // Atualizar XP no banco
+      // Atualizar XP e level no banco (sempre juntos para consistência)
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ xp: newXP })
+        .update({ 
+          xp: newXP,
+          level: newLevelInfo.level  // Sempre atualizar level explicitamente
+        })
         .eq('id', userId);
 
       if (updateError) {
@@ -258,20 +261,44 @@ export const identityVotesService = {
       const oldLevel = profile?.level || 1;
       const newXP = oldXP + xpAmount;
 
-      // Calcular novo nível
+      // Calcular novo nível ANTES de atualizar
       const oldLevelInfo = calculateLevel(oldXP);
       const newLevelInfo = calculateLevel(newXP);
       const didLevelUp = newLevelInfo.level > oldLevelInfo.level;
 
       // Atualizar XP no banco (o trigger atualiza o level automaticamente)
+      // IMPORTANTE: Sempre atualizar XP e level juntos para garantir consistência
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ xp: newXP })
+        .update({ 
+          xp: newXP,
+          level: newLevelInfo.level  // Sempre atualizar level explicitamente
+        })
         .eq('id', userId);
 
       if (updateError) {
         console.error('❌ Erro ao atualizar XP:', updateError);
         throw updateError;
+      }
+
+      // Verificar se o nível foi atualizado corretamente
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('level')
+        .eq('id', userId)
+        .single();
+
+      if (updatedProfile?.level !== newLevelInfo.level) {
+        console.warn('⚠️ Level não foi atualizado corretamente pelo trigger, forçando atualização...');
+        // Tentar atualizar novamente
+        const { error: retryError } = await supabase
+          .from('profiles')
+          .update({ level: newLevelInfo.level })
+          .eq('id', userId);
+
+        if (retryError) {
+          console.error('❌ Erro ao atualizar level após retry:', retryError);
+        }
       }
 
       console.log('🎉 XP atualizado:', { 
@@ -282,6 +309,17 @@ export const identityVotesService = {
         newLevel: newLevelInfo.level,
         didLevelUp 
       });
+
+      // Log detalhado se houve level up
+      if (didLevelUp) {
+        console.log('🚀 LEVEL UP DETECTADO!', {
+          oldLevel: oldLevelInfo.level,
+          newLevel: newLevelInfo.level,
+          oldXP,
+          newXP,
+          levelInfo: newLevelInfo.levelInfo
+        });
+      }
 
       const result: IdentityVoteResult = {
         totalVotes: 1,

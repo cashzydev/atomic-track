@@ -83,20 +83,22 @@ const SmartInsights = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.1 }}
           className={cn(
-            "p-3 rounded-lg border-l-4 bg-card/30 backdrop-blur-sm",
-            insight.type === 'success' && "border-chart-1",
-            insight.type === 'warning' && "border-chart-2",
-            insight.type === 'celebration' && "border-primary",
-            insight.type === 'tip' && "border-chart-3"
+            "p-4 rounded-xl bg-card/50 backdrop-blur-sm shadow-[0_4px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)]",
+            insight.type === 'success' && "bg-gradient-to-br from-emerald-500/5 to-teal-500/5",
+            insight.type === 'warning' && "bg-gradient-to-br from-amber-500/5 to-orange-500/5",
+            insight.type === 'celebration' && "bg-gradient-to-br from-violet-500/5 to-purple-500/5",
+            insight.type === 'tip' && "bg-gradient-to-br from-blue-500/5 to-cyan-500/5"
           )}
         >
-          <div className="flex items-start gap-3">
-            <span className="text-xl">{insight.icon}</span>
-            <div className="flex-1">
-              <h4 className="font-semibold text-foreground text-sm mb-0.5">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 text-violet-400 flex-shrink-0 mt-0.5">
+              {insight.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-foreground text-sm mb-1">
                 {insight.title}
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {insight.description}
               </p>
             </div>

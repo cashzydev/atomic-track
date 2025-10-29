@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Sparkles, BarChart, Target, Trophy, Zap } from "lucide-react";
-import { useApp } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useHabits } from "@/hooks/useHabits";
 
 const CoachAI = () => {
-  const { user, habits } = useApp();
+  const { user } = useAuth();
+  const { data: habits = [] } = useHabits();
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
-  const aiTips = [
-    `${user?.name}, cada ação que você toma é um voto para o tipo de pessoa que deseja se tornar.`,
+  const aiTips = useMemo(() => [
+    `${user?.user_metadata?.name || 'Usuário'}, cada ação que você toma é um voto para o tipo de pessoa que deseja se tornar.`,
     "A consistência está se tornando parte de quem você é.",
     "Melhorias de 1% ao dia: pequenas mudanças, efeitos extraordinários.",
     "Você não sobe ao nível de suas metas. Você cai ao nível de seus sistemas.",
     "Quebrar a corrente uma vez é humano. Duas vezes é escolha.",
-    "Seus hábitos moldam sua identidade. Sua identidade molda seus hábitos.",
+    "Seus hábitos moldam sua identidade. Sua identidade moldam seus hábitos.",
     "Toda ação é um voto. Cada dia é uma eleição.",
     "O processo é mais importante que o resultado. Foque no sistema.",
-  ];
+  ], [user?.user_metadata?.name]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -23,7 +25,7 @@ const CoachAI = () => {
     }, 30000); // Troca a cada 30 segundos
 
     return () => clearInterval(interval);
-  }, []);
+  }, [aiTips.length]);
 
   const completedHabits = habits.filter(h => h.status === "completed").length;
   const totalHabits = habits.length;
@@ -42,7 +44,6 @@ const CoachAI = () => {
               alt="AI Coach"
               className="w-6 h-6 sm:w-8 sm:h-8 opacity-80"
               style={{
-                filter: 'drop-shadow(0 0 8px rgba(124, 58, 237, 0.6))',
                 animation: 'spin-slow 8s linear infinite'
               }}
             />

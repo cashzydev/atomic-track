@@ -14,7 +14,7 @@ const Button = ({
   children, 
   ...props 
 }: ButtonProps) => {
-  const baseStyles = "font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
     primary: "bg-gradient-to-r from-violet-600 to-purple-600 text-slate-50 shadow-lg shadow-violet-500/50 hover:shadow-xl hover:shadow-violet-500/70 hover:scale-105",

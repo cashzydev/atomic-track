@@ -1,6 +1,6 @@
 # Design System
 
-Esta pasta contém o design system do atomicTracker — tokens, tema e componentes base.
+Esta pasta contém o design system do atomicTrack — tokens, tema e componentes base.
 
 ## Componentes disponíveis
 

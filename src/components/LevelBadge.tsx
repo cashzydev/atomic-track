@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { getLevelInfo } from '@/systems/levelSystem';
 import { getLevelTitle } from '@/utils/levelTranslations';
+import { SimpleAvatar } from '@/components/SimpleAvatar';
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +19,11 @@ interface LevelBadgeProps {
   animated?: boolean;
   xp?: number;
   nextLevelXP?: number;
+  user?: {
+    name?: string;
+    email?: string;
+  };
+  useAvatar?: boolean;
 }
 
 const LevelBadge: React.FC<LevelBadgeProps> = ({ 
@@ -27,7 +33,9 @@ const LevelBadge: React.FC<LevelBadgeProps> = ({
   showProgress = false,
   animated = false,
   xp,
-  nextLevelXP 
+  nextLevelXP,
+  user,
+  useAvatar = false
 }) => {
   const { i18n } = useTranslation();
   const levelInfo = getLevelInfo(level);
@@ -113,7 +121,16 @@ const LevelBadge: React.FC<LevelBadgeProps> = ({
           </div>
         )}
 
-        <Icon size={iconSizes[size]} className="text-white relative z-10" />
+        {useAvatar && user ? (
+          <SimpleAvatar
+            name={user.name || 'Usuário'}
+            email={user.email || ''}
+            size={size === 'xs' ? 'sm' : size === 'sm' ? 'md' : size === 'md' ? 'lg' : 'xl'}
+            className="relative z-10 border-2 border-white/30"
+          />
+        ) : (
+          <Icon size={iconSizes[size]} className="text-white relative z-10" />
+        )}
       </div>
 
       {/* Progress ring ao redor */}

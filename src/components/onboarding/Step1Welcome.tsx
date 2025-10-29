@@ -31,9 +31,6 @@ const Step1Welcome = ({ onModeSelect }: Step1WelcomeProps) => {
             src="/atom-logo.png"
             alt=""
             className="w-12 h-12 sm:w-16 sm:h-16 animate-float"
-            style={{
-              filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.6))"
-            }}
           />
         </h2>
       </div>

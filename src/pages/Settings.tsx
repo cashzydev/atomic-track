@@ -342,7 +342,7 @@ export default function SettingsPage() {
         <TabsContent value="about" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sobre o atomicTracker</CardTitle>
+              <CardTitle>Sobre o atomicTrack</CardTitle>
               <CardDescription>
                 Informações sobre o aplicativo e suporte
               </CardDescription>

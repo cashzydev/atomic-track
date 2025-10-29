@@ -17,14 +17,11 @@ export function LoadingScreen({ progress = 60 }: LoadingScreenProps) {
       <div className="text-center">
         <img 
           src="/atom-logo.png" 
-          alt="atomicTracker"
+          alt="atomicTrack"
           className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 animate-pulse-violet"
-          style={{
-            filter: 'drop-shadow(0 0 30px rgba(124, 58, 237, 0.8))'
-          }}
         />
         <h2 className="text-xl sm:text-2xl font-bold text-violet-400 mb-2">
-          atomicTracker
+          atomicTrack
         </h2>
         <p className="text-sm sm:text-base text-slate-400 mb-6">
           Carregando sua jornada...

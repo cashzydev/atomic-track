@@ -50,7 +50,8 @@ const AdminPanel: React.FC = () => {
           xp,
           level,
           avatar_type,
-          avatar_color
+          avatar_color,
+          is_founder
         `)
         .order('created_at', { ascending: false });
 
@@ -87,6 +88,7 @@ const AdminPanel: React.FC = () => {
           return {
             ...profile,
             is_admin: adminUserIds.has(profile.id),
+            is_founder: profile.is_founder || false,
             total_habits: totalHabits,
             total_completions: totalCompletions,
             longest_streak: longestStreak,
@@ -216,6 +218,77 @@ const AdminPanel: React.FC = () => {
     }
   });
 
+  // Mutação para tornar usuário fundador
+  const toggleFounderMutation = useMutation({
+    mutationFn: async ({ userId, isFounder }: { userId: string; isFounder: boolean }) => {
+      if (isFounder) {
+        // Remover status de fundador
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            tier: 'free',
+            is_founder: false 
+          })
+          .eq('id', userId);
+        
+        if (profileError) throw profileError;
+
+        // Atualizar subscription para free ou cancelar
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .update({
+            tier: 'free',
+            status: 'cancelled'
+          })
+          .eq('user_id', userId);
+        
+        if (subError) throw subError;
+      } else {
+        // Tornar fundador
+        // Atualizar profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            tier: 'founder',
+            is_founder: true 
+          })
+          .eq('id', userId);
+        
+        if (profileError) throw profileError;
+
+        // Criar/atualizar subscription como founder (vitalício)
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .upsert({
+            user_id: userId,
+            tier: 'founder',
+            status: 'active',
+            started_at: new Date().toISOString(),
+            expires_at: null // Vitalício
+          }, {
+            onConflict: 'user_id'
+          });
+        
+        if (subError) throw subError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users-real'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats-real'] });
+      toast({
+        title: "Sucesso",
+        description: "Status de fundador alterado com sucesso",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: `Erro ao alterar status de fundador: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   const filteredUsers = users?.filter(user =>
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -223,6 +296,8 @@ const AdminPanel: React.FC = () => {
 
   const getTierBadge = (tier: string | null) => {
     switch (tier) {
+      case 'founder':
+        return <Badge className="bg-amber-600">Fundador</Badge>;
       case 'premium':
         return <Badge className="bg-violet-600">Premium</Badge>;
       case 'pro':
@@ -367,6 +442,7 @@ const AdminPanel: React.FC = () => {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-medium">{user.name || 'Sem nome'}</h3>
                           {getTierBadge(user.tier)}
+                          {user.is_founder && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">⭐ Fundador</Badge>}
                           {getAdminBadge(user.is_admin)}
                           {getActivityBadge(user.last_sign_in_at, user.created_at)}
                         </div>
@@ -381,6 +457,19 @@ const AdminPanel: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={user.is_founder ? "destructive" : "default"}
+                          onClick={() => toggleFounderMutation.mutate({
+                            userId: user.id,
+                            isFounder: user.is_founder
+                          })}
+                          disabled={toggleFounderMutation.isPending}
+                          className={user.is_founder ? "bg-amber-600 hover:bg-amber-700" : ""}
+                        >
+                          <Crown className="h-4 w-4 mr-1" />
+                          {user.is_founder ? 'Remover Fundador' : 'Tornar Fundador'}
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"

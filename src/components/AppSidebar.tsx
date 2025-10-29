@@ -8,22 +8,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useLevel } from '@/hooks/useLevel';
 import { useRole } from '@/hooks/useRole';
 import { Target, Home, Award, User, Settings, Calendar, BarChart, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/utils/haptics';
-import LevelBadge from '@/components/LevelBadge';
 
 export function AppSidebar() {
   const location = useLocation();
   const { t } = useTranslation();
-  const { levelInfo, progress, xp, currentLevelXP, nextLevelXP } = useLevel();
   const { open } = useSidebar();
   const { isAdmin } = useRole();
 
@@ -63,7 +59,7 @@ export function AppSidebar() {
           </div>
           {open && (
             <div className="flex flex-col">
-              <span className="font-semibold text-sm text-slate-200">atomicTracker</span>
+              <span className="font-semibold text-sm text-slate-200">atomicTrack</span>
             </div>
           )}
         </div>
@@ -190,42 +186,6 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-slate-800/50">
-        {open ? (
-          <div className="flex items-center gap-3">
-            <LevelBadge 
-              level={levelInfo?.level || 1}
-              size="sm"
-              showProgress={true}
-              showTooltip={false}
-              xp={currentLevelXP}
-              nextLevelXP={nextLevelXP}
-            />
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-200">
-                Nível {levelInfo?.level || 1}
-              </span>
-              <span className="text-xs text-slate-400">
-                {currentLevelXP !== undefined && nextLevelXP !== undefined && nextLevelXP > 0
-                  ? `${Math.round((currentLevelXP / nextLevelXP) * 100)}% completo`
-                  : '0% completo'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <LevelBadge 
-              level={levelInfo?.level || 1}
-              size="sm"
-              showProgress={true}
-              showTooltip={true}
-              xp={currentLevelXP}
-              nextLevelXP={nextLevelXP}
-            />
-          </div>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

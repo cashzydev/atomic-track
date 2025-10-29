@@ -18,7 +18,6 @@ export const getAvatarColor = (name: string): string => {
   
   // Paleta de cores profissionais (não muito vibrantes)
   const colors = [
-    'bg-blue-600',
     'bg-violet-600', 
     'bg-emerald-600',
     'bg-amber-600',
@@ -26,6 +25,7 @@ export const getAvatarColor = (name: string): string => {
     'bg-cyan-600',
     'bg-indigo-600',
     'bg-teal-600',
+    'bg-purple-600',
   ];
   
   return colors[Math.abs(hash) % colors.length];

@@ -15,6 +15,7 @@ import "@/i18n/config";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import HabitsPage from "./pages/HabitsPage";
@@ -37,15 +38,16 @@ function AnimatedRoutes() {
         <Route path="/" element={<ProtectedRoute requireAuth={false}><Landing /></ProtectedRoute>} />
         <Route path="/auth" element={<ProtectedRoute requireAuth={false}><Auth /></ProtectedRoute>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth/payment-success" element={<PaymentSuccess />} />
         <Route path="/onboarding" element={<ProtectedRoute requireAuth><Onboarding /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute requireAuth requireOnboarding><Dashboard /></ProtectedRoute>} />
-        <Route path="/habits" element={<ProtectedRoute requireAuth requireOnboarding><HabitsPage /></ProtectedRoute>} />
-        <Route path="/habits/:id" element={<ProtectedRoute requireAuth requireOnboarding><HabitDetailPage /></ProtectedRoute>} />
-        <Route path="/calendar" element={<ProtectedRoute requireAuth requireOnboarding><CalendarPage /></ProtectedRoute>} />
-        <Route path="/stats" element={<ProtectedRoute requireAuth requireOnboarding><StatsPage /></ProtectedRoute>} />
-        <Route path="/badges" element={<ProtectedRoute requireAuth requireOnboarding><BadgesPage /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute requireAuth requireOnboarding><Profile /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute requireAuth requireOnboarding><Settings /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><Dashboard /></ProtectedRoute>} />
+        <Route path="/habits" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><HabitsPage /></ProtectedRoute>} />
+        <Route path="/habits/:id" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><HabitDetailPage /></ProtectedRoute>} />
+        <Route path="/calendar" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><CalendarPage /></ProtectedRoute>} />
+        <Route path="/stats" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><StatsPage /></ProtectedRoute>} />
+        <Route path="/badges" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><BadgesPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><Profile /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute requireAuth requireOnboarding requirePayment><Settings /></ProtectedRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

@@ -25,6 +25,8 @@ interface TimelineHabit {
   completedAt?: string;
 }
 import KanbanView from "@/components/views/KanbanView";
+import { ListView } from "@/components/views/ListView";
+import { ViewToggle } from "@/components/views/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
@@ -41,6 +43,17 @@ const Dashboard = memo(() => {
   const queryClient = useQueryClient();
   const [isNewHabitModalOpen, setIsNewHabitModalOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  
+  // Estado de visualização com persistência no localStorage
+  const [currentView, setCurrentView] = useState<'list' | 'kanban'>(() => {
+    const saved = localStorage.getItem('atomicTrack_dashboard_view');
+    return (saved === 'list' || saved === 'kanban') ? saved : 'list';
+  });
+
+  const handleViewChange = useCallback((view: 'list' | 'kanban') => {
+    setCurrentView(view);
+    localStorage.setItem('atomicTrack_dashboard_view', view);
+  }, []);
 
   // Get XP earned today from database
   const { data: xpEarnedToday } = useQuery({
@@ -118,25 +131,15 @@ const Dashboard = memo(() => {
   const handleCompleteHabit = useCallback(async (habitId: number) => {
     const habit = habits?.find(h => h.id === habitId);
     if (!habit) return;
+    
+    // Atomic animation
+    triggerAtomicAnimation();
+    
+    // Completar hábito (o toast será mostrado no hook useHabits)
     await completeHabit({
       habitId,
       percentage: 100,
       habitTitle: habit.title
-    });
-
-    // Atomic animation
-    triggerAtomicAnimation();
-
-    // Toast with undo
-    toast.success(`${habit.title} concluído!`, {
-      description: "Ótimo trabalho! Continue assim 🚀",
-      duration: 5000,
-      action: {
-        label: "Desfazer",
-        onClick: async () => {
-          await handleUndoHabit(habitId);
-        }
-      }
     });
   }, [habits, completeHabit]);
 
@@ -169,8 +172,8 @@ const Dashboard = memo(() => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Card cinza escuro */}
-            <div className="relative bg-card rounded-2xl p-6 border">
+            {/* Card cinza escuro - Neuromorfismo sem bordas */}
+            <div className="relative bg-card/50 backdrop-blur-sm rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
               
               {/* Conteúdo principal */}
               <div className="space-y-6">
@@ -233,7 +236,7 @@ const Dashboard = memo(() => {
                 >
                   <Button
                     onClick={() => setIsNewHabitModalOpen(true)}
-                    className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300 hover:scale-105 border-0 px-6 py-3 text-base font-medium rounded-xl"
+                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-[0_4px_20px_rgba(139,92,246,0.3)] hover:shadow-[0_6px_25px_rgba(139,92,246,0.4)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-0 px-6 py-3 text-base font-medium rounded-xl"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     {t('habits.newHabit')}
@@ -243,7 +246,7 @@ const Dashboard = memo(() => {
             </div>
           </motion.div>
 
-          {/* Kanban View - Destaque Secundário */}
+          {/* View Toggle + List/Kanban View */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -253,12 +256,42 @@ const Dashboard = memo(() => {
             {/* Subtle border glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-transparent to-purple-500/10 rounded-2xl blur-sm" />
             <div className="relative">
-              <KanbanView 
-                habits={habits || []} 
-                onComplete={handleCompleteHabit} 
-                onAddHabit={() => setIsNewHabitModalOpen(true)}
-                onUndo={handleUndoHabit}
-              />
+              {/* Renderização condicional da view */}
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {currentView === 'list' ? (
+                  <ListView 
+                    habits={habits || []} 
+                    onComplete={handleCompleteHabit} 
+                    onAddHabit={() => setIsNewHabitModalOpen(true)}
+                    onUndo={handleUndoHabit}
+                    toggleElement={
+                      <ViewToggle 
+                        currentView={currentView} 
+                        onViewChange={handleViewChange} 
+                      />
+                    }
+                  />
+                ) : (
+                  <KanbanView 
+                    habits={habits || []} 
+                    onComplete={handleCompleteHabit} 
+                    onAddHabit={() => setIsNewHabitModalOpen(true)}
+                    onUndo={handleUndoHabit}
+                    toggleElement={
+                      <ViewToggle 
+                        currentView={currentView} 
+                        onViewChange={handleViewChange} 
+                      />
+                    }
+                  />
+                )}
+              </motion.div>
             </div>
           </motion.div>
 
@@ -278,7 +311,7 @@ const Dashboard = memo(() => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <div className="relative bg-card rounded-2xl p-8 border">
+            <div className="relative bg-card/50 backdrop-blur-sm rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
               <HabitTimeline
                 habits={timelineHabits}
               />

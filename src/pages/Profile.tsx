@@ -104,7 +104,15 @@ export default function Profile() {
                     {(profile?.name || user.email || 'U')[0]?.toUpperCase()}
                   </div>
                   <div className="absolute -bottom-2 -right-2">
-                    <LevelBadge level={level} size="sm" />
+                    <LevelBadge 
+                      level={level} 
+                      size="sm"
+                      user={{
+                        name: profile?.name || user.email || 'Usuário',
+                        email: user.email || ''
+                      }}
+                      useAvatar={true}
+                    />
                   </div>
                 </div>
 

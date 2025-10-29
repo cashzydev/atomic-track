@@ -52,7 +52,7 @@ const PeriodChart = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4"
+      className="rounded-xl bg-card/50 backdrop-blur-sm p-5 shadow-[0_4px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)]"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ const PeriodChart = () => {
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
+      <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-border/30">
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">Média</p>
           <p className="text-lg font-bold text-foreground">{stats.averagePercentage}%</p>

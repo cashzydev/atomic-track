@@ -1,10 +1,11 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTitle, DrawerDescription, DrawerHeader, DrawerFooter } from "@/components/ui/drawer";
 import { 
   X, BookOpen, Dumbbell, Brain, Heart, Droplet, Utensils, Moon, Sun, 
   Target, Zap, Award, Sparkles, Trophy, HelpCircle, CheckCircle2, 
-  Lightbulb, ChevronDown, Rocket 
+  Lightbulb, ChevronDown, Rocket, Wand2, Loader2
 } from "lucide-react";
 import { useHabits } from "@/hooks/useHabits";
 import { toast } from "sonner";
@@ -20,8 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { triggerHaptic } from "@/utils/haptics";
@@ -33,194 +33,122 @@ interface NewHabitModalProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const EDUCATIONAL_TIPS = {
-  attractive: {
-    icon: Sparkles,
-    title: "Torne Atraente",
-    tip: "Empilhar tentações aumenta a chance de sucesso em 80%"
-  },
-  easy: {
-    icon: Zap,
-    title: "Torne Fácil",
-    tip: "Comece pequeno: a regra dos 2 minutos é crucial"
-  },
-  satisfying: {
-    icon: Trophy,
-    title: "Torne Satisfatório",
-    tip: "Celebre pequenas vitórias para reforçar o hábito"
-  },
-  triggers: {
-    icon: Target,
-    title: "Gatilhos Extra",
-    tip: "Associar a hábitos existentes aumenta em 3x a chance de sucesso"
-  }
-};
-
 const ICON_OPTIONS = [
-  { icon: BookOpen, name: 'BookOpen' },
-  { icon: Dumbbell, name: 'Dumbbell' },
-  { icon: Brain, name: 'Brain' },
-  { icon: Heart, name: 'Heart' },
-  { icon: Droplet, name: 'Droplet' },
-  { icon: Utensils, name: 'Utensils' },
-  { icon: Moon, name: 'Moon' },
-  { icon: Sun, name: 'Sun' },
-  { icon: Target, name: 'Target' },
-  { icon: Zap, name: 'Zap' },
-  { icon: Award, name: 'Award' },
+  { icon: BookOpen, name: 'BookOpen', color: 'from-blue-500 to-cyan-500' },
+  { icon: Dumbbell, name: 'Dumbbell', color: 'from-orange-500 to-red-500' },
+  { icon: Brain, name: 'Brain', color: 'from-purple-500 to-pink-500' },
+  { icon: Heart, name: 'Heart', color: 'from-pink-500 to-rose-500' },
+  { icon: Droplet, name: 'Droplet', color: 'from-blue-400 to-cyan-400' },
+  { icon: Utensils, name: 'Utensils', color: 'from-amber-500 to-orange-500' },
+  { icon: Moon, name: 'Moon', color: 'from-indigo-500 to-purple-500' },
+  { icon: Sun, name: 'Sun', color: 'from-yellow-500 to-orange-500' },
+  { icon: Target, name: 'Target', color: 'from-violet-500 to-purple-500' },
+  { icon: Zap, name: 'Zap', color: 'from-yellow-400 to-amber-500' },
+  { icon: Award, name: 'Award', color: 'from-emerald-500 to-teal-500' },
 ];
 
 const UNIT_OPTIONS = ['minutos', 'páginas', 'vezes', 'km', 'copos', 'horas'];
 
-const HABIT_SUGGESTIONS: Record<string, { when: string; where: string; goal: string; unit: string; twoMin: string }> = {
-  BookOpen: { when: "Após o café da manhã", where: "Poltrona de leitura", goal: "10", unit: "páginas", twoMin: "Ler 1 página" },
-  Dumbbell: { when: "Ao acordar", where: "Quarto", goal: "20", unit: "flexões", twoMin: "Fazer 5 flexões" },
-  Brain: { when: "Antes de dormir", where: "Cama", goal: "5", unit: "minutos", twoMin: "Respirar fundo 3 vezes" },
-  Droplet: { when: "Ao acordar", where: "Cozinha", goal: "2", unit: "copos", twoMin: "Beber 1 copo" },
-  Pencil: { when: "Após o jantar", where: "Mesa de estudos", goal: "30", unit: "minutos", twoMin: "Escrever 1 frase" },
-  Music: { when: "Durante o almoço", where: "Sala", goal: "15", unit: "minutos", twoMin: "Ouvir 1 música" },
-  default: { when: "Após café da manhã", where: "Em casa", goal: "10", unit: "minutos", twoMin: "Fazer por 2 minutos" }
+const HABIT_SUGGESTIONS: Record<string, { title: string; when: string; where: string; goal: string; unit: string; twoMin: string }> = {
+  BookOpen: { title: "Leitura", when: "Após o café da manhã", where: "Poltrona de leitura", goal: "10", unit: "páginas", twoMin: "Ler 1 página" },
+  Dumbbell: { title: "Exercício", when: "Ao acordar", where: "Quarto", goal: "20", unit: "flexões", twoMin: "Fazer 5 flexões" },
+  Brain: { title: "Meditação", when: "Antes de dormir", where: "Cama", goal: "5", unit: "minutos", twoMin: "Respirar fundo 3 vezes" },
+  Droplet: { title: "Hidratação", when: "Ao acordar", where: "Cozinha", goal: "2", unit: "copos", twoMin: "Beber 1 copo" },
+  Utensils: { title: "Alimentação", when: "Durante o almoço", where: "Cozinha", goal: "1", unit: "refeição", twoMin: "Comer 1 fruta" },
+  Moon: { title: "Sono", when: "Às 22:00", where: "Quarto", goal: "8", unit: "horas", twoMin: "Deitar na cama" },
+  Sun: { title: "Rotina", when: "Ao acordar", where: "Casa", goal: "30", unit: "minutos", twoMin: "Levantar da cama" },
+  Target: { title: "Meta", when: "Após café da manhã", where: "Escritório", goal: "1", unit: "tarefa", twoMin: "Abrir o planner" },
+  Zap: { title: "Energia", when: "Ao acordar", where: "Quarto", goal: "10", unit: "minutos", twoMin: "Alongar 2 minutos" },
+  Award: { title: "Conquista", when: "Após trabalho", where: "Casa", goal: "1", unit: "atividade", twoMin: "Celebrar pequena vitória" },
+  default: { title: "Hábito", when: "Após café da manhã", where: "Em casa", goal: "10", unit: "minutos", twoMin: "Fazer por 2 minutos" }
 };
 
 const NewHabitModal = ({ open, onClose, onOpenChange }: NewHabitModalProps) => {
   const { createHabit, isCreating, data: habits } = useHabits();
   const isMobile = useIsMobile();
-  const [showAllIcons, setShowAllIcons] = useState(false);
   
-  // Form data - Essential fields
+  // Form data - Essential fields (always visible)
   const [title, setTitle] = useState("");
   const [selectedIcon, setSelectedIcon] = useState(ICON_OPTIONS[0].name);
-  const [whenTime, setWhenTime] = useState("");
-  const [timeOfDay, setTimeOfDay] = useState("");
-  const [whenMode, setWhenMode] = useState<'behavior' | 'time'>('behavior');
+  const [when, setWhen] = useState("");
   const [location, setLocation] = useState("");
+  
+  // Advanced options (in accordion)
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [goal, setGoal] = useState(5);
   const [unit, setUnit] = useState("minutos");
-
-  // Auto-fill animation flags (brief pulse when suggestion applied)
-  const [pulseTitle, setPulseTitle] = useState(false);
-  const [pulseGoal, setPulseGoal] = useState(false);
-  const [pulseUnit, setPulseUnit] = useState(false);
-  
-  // Advanced options state
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [activeOptimizationTab, setActiveOptimizationTab] = useState("attractive");
-  const [appliedOptimizations, setAppliedOptimizations] = useState<Record<string, boolean>>({});
-  const [expandedOptimizationInput, setExpandedOptimizationInput] = useState<Record<string, boolean>>({});
-  
-  // Advanced fields - Law 2: Make it Attractive
-  const [motivation, setMotivation] = useState("");
-  const [temptationBundle, setTemptationBundle] = useState("");
-  
-  // Advanced fields - Law 3: Make it Easy
-  const [twoMinuteVersion, setTwoMinuteVersion] = useState("");
-  const [environmentPrep, setEnvironmentPrep] = useState("");
-  
-  // Advanced fields - Law 4: Make it Satisfying
-  const [reward, setReward] = useState("");
-  
-  // Advanced fields - Additional Triggers
   const [habitStack, setHabitStack] = useState<number | null>(null);
+  const [temptationBundle, setTemptationBundle] = useState("");
+  const [twoMinuteVersion, setTwoMinuteVersion] = useState("");
+  
+  // Validation state
+  const [attempted, setAttempted] = useState(false);
+
+  // Calcular progresso do formulário
+  const formProgress = () => {
+    let completed = 0;
+    if (title.trim()) completed++;
+    if (when.trim()) completed++;
+    if (location.trim()) completed++;
+    if (selectedIcon) completed++;
+    return Math.round((completed / 4) * 100);
+  };
 
   const resetForm = () => {
     setTitle("");
     setSelectedIcon(ICON_OPTIONS[0].name);
+    setWhen("");
+    setLocation("");
     setGoal(5);
     setUnit("minutos");
-    setWhenTime("");
-  setTimeOfDay("");
-  setWhenMode('behavior');
-    setLocation("");
     setHabitStack(null);
-    setMotivation("");
     setTemptationBundle("");
     setTwoMinuteVersion("");
-    setEnvironmentPrep("");
-    setReward("");
     setIsAdvancedOpen(false);
-    setActiveOptimizationTab("attractive");
+    setAttempted(false);
+  };
+
+  const getDefaultTitle = (iconName: string) => {
+    return HABIT_SUGGESTIONS[iconName]?.title || HABIT_SUGGESTIONS.default.title;
   };
 
   const applySuggestions = (iconName: string) => {
     const suggestions = HABIT_SUGGESTIONS[iconName] || HABIT_SUGGESTIONS.default;
-    // Always apply suggestions (but keep user's custom values) — animate filled fields
-    if (!title) {
-      setTitle(getDefaultTitle(iconName));
-      setPulseTitle(true);
-      setTimeout(() => setPulseTitle(false), 550);
-    }
-  if (!whenTime) setWhenTime(suggestions.when);
-  // if suggestion is a rough time keyword, keep it in behavior; timeOfDay remains manual
+    
+    if (!title) setTitle(suggestions.title);
+    if (!when) setWhen(suggestions.when);
     if (!location) setLocation(suggestions.where);
-    if (!goal) {
-      setGoal(Number(suggestions.goal));
-      setPulseGoal(true);
-      setTimeout(() => setPulseGoal(false), 550);
-    }
-    if (!unit) {
-      setUnit(suggestions.unit);
-      setPulseUnit(true);
-      setTimeout(() => setPulseUnit(false), 550);
-    }
     if (!twoMinuteVersion) setTwoMinuteVersion(suggestions.twoMin);
-  };
-
-  const getDefaultTitle = (iconName: string) => {
-    switch (iconName) {
-      case 'Dumbbell': return 'Exercício';
-      case 'BookOpen': return 'Leitura';
-      case 'Brain': return 'Meditação';
-      case 'Droplet': return 'Hidratação';
-      case 'Utensils': return 'Alimentação';
-      case 'Moon': return 'Sono';
-      case 'Sun': return 'Rotina';
-      case 'Target': return 'Meta';
-      case 'Zap': return 'Energia';
-      case 'Award': return 'Conquista';
-      default: return 'Hábito';
-    }
+    
+    toast.success(`Sugestões aplicadas para ${suggestions.title}! ✨`);
+    triggerHaptic('success');
   };
 
   const handleHabitStackChange = (habitId: number | null, habit?: any) => {
     setHabitStack(habitId);
     if (habit) {
-      setWhenTime(`Após ${habit.title}`);
-    } else {
-      setWhenTime("");
+      setWhen(`Após ${habit.title}`);
     }
-  };
-
-  // Calculate habit strength based on filled fields
-  const calculateHabitStrength = (): number => {
-    let strength = 0;
-    
-    // Essential fields (50%)
-    if (title && whenTime && location) strength += 50;
-    
-    // Optimization fields (up to 50%)
-    if (motivation || temptationBundle) strength += 12.5;
-    if (twoMinuteVersion) strength += 12.5;
-    if (environmentPrep) strength += 12.5;
-    if (reward || habitStack) strength += 12.5;
-    
-    return Math.min(100, strength);
-  };
-
-  const getStrengthLabel = (strength: number): string => {
-    if (strength < 50) return "Básico";
-    if (strength < 75) return "Bom";
-    if (strength < 90) return "Ótimo";
-    return "Excelente";
   };
 
   const handleCreate = async () => {
+    setAttempted(true);
+    
     if (!title.trim()) {
       toast.error("Por favor, dê um nome ao seu hábito");
+      document.getElementById('title')?.focus();
       return;
     }
 
-    if (!whenTime || !location) {
-      toast.error("Por favor, defina quando e onde você fará este hábito");
+    if (!when.trim()) {
+      toast.error("Defina quando você fará este hábito");
+      document.getElementById('when')?.focus();
+      return;
+    }
+
+    if (!location.trim()) {
+      toast.error("Defina onde você fará este hábito");
+      document.getElementById('location')?.focus();
       return;
     }
 
@@ -228,16 +156,17 @@ const NewHabitModal = ({ open, onClose, onOpenChange }: NewHabitModalProps) => {
       await createHabit({
         title: title.trim(),
         icon: selectedIcon,
-        when_time: whenTime || '',
+        when_time: when.trim(),
         where_location: location.trim(),
-        trigger_activity: whenTime || null,
+        trigger_activity: when.trim() || null,
         temptation_bundle: temptationBundle.trim() || null,
-        environment_prep: environmentPrep.trim() || null,
+        environment_prep: null,
         goal_target: goal,
         goal_unit: unit,
       });
 
       toast.success("Hábito criado com sucesso! 🌱");
+      triggerHaptic('success');
       resetForm();
       if (onOpenChange) onOpenChange(false);
       if (onClose) onClose();
@@ -255,423 +184,525 @@ const NewHabitModal = ({ open, onClose, onOpenChange }: NewHabitModalProps) => {
     }
   };
 
-  // legacy handleSubmit removed — use handleCreate which validates and creates habit with current fields
-
-  const habitStrength = calculateHabitStrength();
-
-  const isValidTitle = title.trim().length > 0;
-  const isValidWhen = whenMode === 'time' ? timeOfDay.trim().length > 0 : whenTime.trim().length > 0;
-  const isValidLocation = location.trim().length > 0;
-  const isFormValid = isValidTitle && isValidWhen && isValidLocation;
-
   const renderEssentialFields = () => (
     <div className="space-y-6">
-      {/* Nome do Hábito */}
-      <div className="space-y-2">
-        <Label htmlFor="title">Nome do Hábito</Label>
+      {/* Progress Indicator */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-2"
+      >
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground font-medium">Progresso</span>
+          <span className="text-violet-400 font-bold">{formProgress()}%</span>
+        </div>
+        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${formProgress()}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+          />
+        </div>
+      </motion.div>
+
+      {/* 1. Nome do Hábito */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="title" className="flex items-center gap-2">
+          <span>Nome do Hábito</span>
+          <span className="text-destructive">*</span>
+          {title.trim() && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-emerald-400"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </motion.span>
+          )}
+        </Label>
+        <div className="relative group">
         <Input
           id="title"
           placeholder="Ex: Ler um livro"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className={`neuro-interactive ${pulseTitle ? 'animate-scale-in' : ''} ${isValidTitle ? 'ring-2 ring-emerald-500/20 border-emerald-500/30' : ''}`}
-        />
-      </div>
-
-      {/* Seletor de Ícones — faixa horizontal rolável */}
-      <div className="space-y-2">
-        <Label>Ícone</Label>
-        {/* Horizontal scroll with 2 rows (fixed height) to avoid expanding modal vertically */}
-        <div className="overflow-x-auto scrollbar-hide -mx-2 px-2">
-          <div className="inline-grid grid-flow-col auto-cols-max grid-rows-2 gap-3 py-2 items-start h-28">
-            {ICON_OPTIONS.map(({ icon: Icon, name }) => {
-              const active = selectedIcon === name;
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => {
-                    setSelectedIcon(name);
-                    applySuggestions(name);
-                  }}
-                  aria-label={`Selecionar ícone ${name}`}
-                  className={cn(
-                    'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform',
-                    'neuro-card',
-                    active ? 'scale-105 ring-2 ring-violet-500/40 shadow-[0_0_24px_rgba(139,92,246,0.22)]' : 'opacity-90'
-                  )}
-                  aria-pressed={active}
-                >
-                  <Icon className="w-5 h-5 text-foreground/90" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Quando: modo (Comportamento | Hora) */}
-      <div className="space-y-2">
-        <Label>Quando?</Label>
-        {/* Suggested time chips */}
-        <div className="flex gap-2 mb-2 flex-wrap">
-          <button type="button" className="px-3 py-1 rounded-full text-sm bg-card/60" onClick={() => { setWhenMode('time'); setTimeOfDay('08:00'); }}>
-            Manhã (08:00)
-          </button>
-          <button type="button" className="px-3 py-1 rounded-full text-sm bg-card/60" onClick={() => { setWhenMode('time'); setTimeOfDay('12:00'); }}>
-            Almoço (12:00)
-          </button>
-          <button type="button" className="px-3 py-1 rounded-full text-sm bg-card/60" onClick={() => { setWhenMode('time'); setTimeOfDay('20:00'); }}>
-            Noite (20:00)
-          </button>
-          <button type="button" className="px-3 py-1 rounded-full text-sm bg-card/60" onClick={() => { setWhenMode('behavior'); setWhenTime('Após o café da manhã'); }}>
-            Após (comportamento)
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setWhenMode('behavior')}
-            className={cn(
-              'px-3 py-1 rounded-md text-sm',
-              whenMode === 'behavior' ? 'bg-violet-600 text-white shadow-[0_6px_24px_rgba(139,92,246,0.12)]' : 'bg-card/60 text-muted-foreground'
+          className={cn(
+              "transition-all duration-300",
+              !title && attempted && "border-destructive focus-visible:ring-destructive",
+              title.trim() && "border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20",
+              "focus:shadow-[0_0_15px_rgba(139,92,246,0.2)]"
             )}
-          >
-            Comportamento
-          </button>
-          <button
-            type="button"
-            onClick={() => setWhenMode('time')}
-            className={cn(
-              'px-3 py-1 rounded-md text-sm',
-              whenMode === 'time' ? 'bg-violet-600 text-white shadow-[0_6px_24px_rgba(139,92,246,0.12)]' : 'bg-card/60 text-muted-foreground'
-            )}
-          >
-            Hora
-          </button>
+          />
+          {title.trim() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              </div>
+            </motion.div>
+          )}
         </div>
-
-        {whenMode === 'time' ? (
-          <Input
-            id="timeOfDay"
-            type="time"
-            value={timeOfDay}
-            onChange={(e) => setTimeOfDay(e.target.value)}
-            className={`neuro-interactive mt-2 ${isValidWhen ? 'ring-2 ring-emerald-500/20 border-emerald-500/30' : ''}`}
-          />
-        ) : (
-          <Input
-            id="whenTime"
-            placeholder="Ex: Após o café da manhã"
-            value={whenTime}
-            onChange={(e) => setWhenTime(e.target.value)}
-            className={`neuro-interactive mt-2 ${isValidWhen ? 'ring-2 ring-emerald-500/20 border-emerald-500/30' : ''}`}
-          />
+        <AnimatePresence>
+        {!title && attempted && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="text-xs text-destructive flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+            Por favor, dê um nome ao seu hábito
+            </motion.p>
         )}
-      </div>
+        </AnimatePresence>
+      </motion.div>
 
-      {/* Onde */}
-      <div className="space-y-2">
-        <Label htmlFor="location">Onde?</Label>
+      {/* 2. Ícone */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="space-y-3"
+      >
+        <Label className="flex items-center gap-2">
+          <span>Ícone</span>
+          <span className="text-xs text-muted-foreground">(selecione um)</span>
+        </Label>
+        
+        <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+          {ICON_OPTIONS.map(({ icon: Icon, name, color }, index) => {
+            const active = selectedIcon === name;
+            return (
+              <motion.button
+                key={name}
+                type="button"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + index * 0.02 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setSelectedIcon(name);
+                  triggerHaptic('light');
+                }}
+                aria-label={`Selecionar ícone ${name}`}
+                className={cn(
+                  "aspect-square rounded-xl transition-all duration-300 relative overflow-hidden",
+                  "border-2 flex items-center justify-center",
+                  active 
+                    ? `border-violet-500 bg-gradient-to-br ${color} shadow-lg shadow-violet-500/30` 
+                    : "border-border bg-card/50 hover:bg-card/80 hover:border-violet-500/50"
+                )}
+                aria-pressed={active}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="selectedIcon"
+                    className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <Icon className={cn(
+                  "w-5 h-5 relative z-10 transition-all duration-300",
+                  active ? "text-white scale-110" : "text-foreground"
+                )} />
+                {active && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-violet-500 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <CheckCircle2 className="w-2.5 h-2.5 text-white" fill="white" />
+                  </motion.div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+        
+        {/* Botão de sugestão melhorado */}
+        {selectedIcon && !title && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => applySuggestions(selectedIcon)}
+              className="text-xs text-muted-foreground hover:text-foreground group relative overflow-hidden"
+            >
+              <Wand2 className="w-3 h-3 mr-1.5 group-hover:rotate-12 transition-transform" />
+              Usar sugestão para {getDefaultTitle(selectedIcon)}
+              <motion.div
+                className="absolute inset-0 bg-violet-500/10"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+          </Button>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* 3. Quando? */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="when" className="flex items-center gap-2">
+          <span>Quando?</span>
+          <span className="text-destructive">*</span>
+          {when.trim() && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-emerald-400"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </motion.span>
+          )}
+        </Label>
+        
+        <div className="relative">
+        <Input
+          id="when"
+          placeholder="Ex: Após café da manhã (ou 08:00)"
+          value={when}
+          onChange={(e) => setWhen(e.target.value)}
+          className={cn(
+              "transition-all duration-300",
+              !when && attempted && "border-destructive focus-visible:ring-destructive",
+              when.trim() && "border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20",
+              "focus:shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+            )}
+          />
+          {when.trim() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              </div>
+            </motion.div>
+          )}
+        </div>
+        
+        {/* Chips melhorados */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex gap-2 mt-2 flex-wrap"
+        >
+          {[
+            { label: "Manhã", value: "08:00" },
+            { label: "Almoço", value: "12:00" },
+            { label: "Noite", value: "20:00" },
+            { label: "Após café", value: "Após café da manhã" }
+          ].map((chip, index) => (
+            <motion.button
+              key={chip.label}
+              type="button"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 + index * 0.05 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setWhen(chip.value)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all bg-background"
+            >
+              {chip.label}
+            </motion.button>
+          ))}
+        </motion.div>
+        
+        <AnimatePresence>
+        {!when && attempted && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="text-xs text-destructive flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+            Defina quando você fará este hábito
+            </motion.p>
+        )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* 4. Onde? */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="location" className="flex items-center gap-2">
+          <span>Onde?</span>
+          <span className="text-destructive">*</span>
+          {location.trim() && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-emerald-400"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </motion.span>
+          )}
+        </Label>
+        <div className="relative">
         <Input
           id="location"
           placeholder="Ex: Na sala de estar"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className={`neuro-interactive ${isValidLocation ? 'ring-2 ring-emerald-500/20 border-emerald-500/30' : ''}`}
-        />
-      </div>
-
-      {/* Meta + Unidade — empilhados verticalmente para mobile */}
-      <div className="space-y-2">
-        <Label htmlFor="goal">Meta Diária</Label>
-        <Input
-          id="goal"
-          type="number"
-          min={1}
-          value={goal}
-          onChange={(e) => setGoal(parseInt(e.target.value) || 1)}
-          className={`neuro-interactive ${pulseGoal ? 'animate-scale-in' : ''}`}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="unit">Unidade</Label>
-        <select
-          id="unit"
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
-          className={`neuro-interactive h-10 w-full rounded-md px-3 py-2 text-sm ${pulseUnit ? 'animate-scale-in' : ''}`}
-        >
-          {UNIT_OPTIONS.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-
-  const renderOptimizations = () => (
-    <Accordion
-      type="single"
-      collapsible
-      className="mt-8"
-      value={isAdvancedOpen ? "optimization" : undefined}
-      onValueChange={(value) => setIsAdvancedOpen(value === "optimization")}
-    >
-      <AccordionItem value="optimization" className="border-b-0">
-        <AccordionTrigger className="flex items-center gap-2 py-4 text-sm font-medium hover:no-underline">
-          <Rocket className="w-4 h-4 text-primary" />
-          Ferramentas de Potência
-          {habitStrength < 100 && (
-            <Badge variant="secondary" className="ml-2 font-normal">
-              +{Math.floor(100 - habitStrength)}% potencial
-            </Badge>
+          className={cn(
+              "transition-all duration-300",
+              !location && attempted && "border-destructive focus-visible:ring-destructive",
+              location.trim() && "border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20",
+              "focus:shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+            )}
+          />
+          {location.trim() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              </div>
+            </motion.div>
           )}
-        </AccordionTrigger>
-        <AccordionContent className="pt-6 pb-2">
-          <Tabs
-            value={activeOptimizationTab}
-            onValueChange={setActiveOptimizationTab}
-            className="w-full"
-          >
-            <TabsList className="w-full justify-start mb-6 bg-transparent p-0 gap-2">
-              {[
-                ['attractive', 'Combinar com Recompensa'],
-                ['easy', 'Começar com 2 Minutos'],
-                ['satisfying', 'Planejar uma Celebração'],
-                ['triggers', 'Gatilho & Localização'],
-              ].map(([key, label]) => (
-                <TabsTrigger
-                  key={key}
-                  value={key as string}
-                  className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-border px-3 py-2 flex items-center gap-2"
-                >
-                  <span className="text-sm">{label}</span>
-                  <input
-                    type="checkbox"
-                    checked={!!appliedOptimizations[key as string]}
-                    onChange={(e) => setAppliedOptimizations(prev => ({ ...prev, [key as string]: e.target.checked }))}
-                    className="ml-2"
-                    aria-label={`Marcar ${label} como aplicado`}
-                  />
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        </div>
+        <AnimatePresence>
+        {!location && attempted && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="text-xs text-destructive flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+            Defina onde você fará este hábito
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-            {/* Attractive -> Combinar com Recompensa */}
-            <TabsContent value="attractive" className="m-0">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="temptation">Combinar com uma Recompensa</Label>
-                  {expandedOptimizationInput['attractive'] ? (
-                    <Textarea
-                      id="temptation"
-                      placeholder="Ex: Ouvir música favorita enquanto pratico"
-                      value={temptationBundle}
-                      onChange={(e) => setTemptationBundle(e.target.value)}
-                      className="resize-none"
-                      rows={3}
-                    />
-                  ) : (
-                    <Input
-                      id="temptation"
-                      placeholder="Ex: Ouvir música favorita enquanto pratico"
-                      value={temptationBundle}
-                      onFocus={() => setExpandedOptimizationInput(prev => ({ ...prev, attractive: true }))}
-                      onChange={(e) => setTemptationBundle(e.target.value)}
-                    />
-                  )}
-                </div>
+      {/* Accordion para opções avançadas melhorado */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+      <Accordion 
+        type="single" 
+        collapsible
+        value={isAdvancedOpen ? "advanced" : undefined}
+        onValueChange={(value) => setIsAdvancedOpen(value === "advanced")}
+      >
+        <AccordionItem value="advanced" className="border-b-0">
+            <AccordionTrigger className="text-sm hover:no-underline group">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-400 group-hover:rotate-12 transition-transform" />
+                <span>Mais opções (opcional)</span>
               </div>
-            </TabsContent>
-
-            {/* Easy -> 2 Minutes */}
-            <TabsContent value="easy" className="m-0">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="twoMin">Começar com 2 Minutos</Label>
-                  {expandedOptimizationInput['easy'] ? (
-                    <Textarea
-                      id="twoMin"
-                      placeholder="Ex: Ler apenas uma página"
-                      value={twoMinuteVersion}
-                      onChange={(e) => setTwoMinuteVersion(e.target.value)}
-                      className="resize-none"
-                      rows={3}
-                    />
-                  ) : (
-                    <Input
-                      id="twoMin"
-                      placeholder="Ex: Ler apenas uma página"
-                      value={twoMinuteVersion}
-                      onFocus={() => setExpandedOptimizationInput(prev => ({ ...prev, easy: true }))}
-                      onChange={(e) => setTwoMinuteVersion(e.target.value)}
-                    />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="prep">Preparação do Ambiente</Label>
-                  <Input
-                    id="prep"
-                    placeholder="Ex: Deixar o livro na mesa de cabeceira"
-                    value={environmentPrep}
-                    onChange={(e) => setEnvironmentPrep(e.target.value)}
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Satisfying -> Celebration */}
-            <TabsContent value="satisfying" className="m-0">
-              <div className="space-y-2">
-                <Label htmlFor="reward">Planejar uma Celebração</Label>
-                {expandedOptimizationInput['satisfying'] ? (
-                  <Textarea
-                    id="reward"
-                    placeholder="Ex: Me presentear com um café especial"
-                    value={reward}
-                    onChange={(e) => setReward(e.target.value)}
-                    className="resize-none"
-                    rows={3}
-                  />
-                ) : (
-                  <Input
-                    id="reward"
-                    placeholder="Ex: Me presentear com um café especial"
-                    value={reward}
-                    onFocus={() => setExpandedOptimizationInput(prev => ({ ...prev, satisfying: true }))}
-                    onChange={(e) => setReward(e.target.value)}
-                  />
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Triggers -> Gatilho & Localização */}
-            <TabsContent value="triggers" className="m-0">
-              <div className="space-y-2">
-                <Label>Empilhar com Outro Hábito</Label>
-                <HabitStackSelector
-                  habits={habits || []}
-                  value={habitStack}
-                  onChange={handleHabitStackChange}
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pt-4">
+            
+            {/* Meta diária */}
+            <div className="space-y-2">
+              <Label>Meta diária</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="number" 
+                  value={goal} 
+                  onChange={(e) => setGoal(parseInt(e.target.value) || 1)}
+                  className="w-20" 
+                  min={1}
                 />
+                <Select value={unit} onValueChange={setUnit}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIT_OPTIONS.map(u => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </TabsContent>
-
-            {/* Small tip text */}
-            <div className="mt-6 flex items-start gap-2 text-xs">
-              <Lightbulb className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-              <p className="text-muted-foreground">
-                {EDUCATIONAL_TIPS[activeOptimizationTab as keyof typeof EDUCATIONAL_TIPS].tip}
-              </p>
             </div>
-          </Tabs>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+
+            {/* Empilhar após outro hábito */}
+            <div className="space-y-2">
+              <Label>Empilhar após outro hábito</Label>
+              <HabitStackSelector 
+                habits={habits || []} 
+                value={habitStack}
+                onChange={handleHabitStackChange}
+              />
+            </div>
+
+            {/* Recompensa ao completar */}
+            <div className="space-y-2">
+              <Label>Recompensa ao completar</Label>
+              <Input 
+                placeholder="Ex: Tomar um café especial"
+                value={temptationBundle}
+                onChange={(e) => setTemptationBundle(e.target.value)}
+              />
+            </div>
+
+            {/* Versão de 2 minutos */}
+            <div className="space-y-2">
+              <Label>Versão de 2 minutos</Label>
+              <Input 
+                placeholder="Ex: Ler apenas 1 página"
+                value={twoMinuteVersion}
+                onChange={(e) => setTwoMinuteVersion(e.target.value)}
+              />
+            </div>
+
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      </motion.div>
+    </div>
   );
 
   return isMobile ? (
     <Drawer open={open} onOpenChange={handleDialogChange}>
-      <DrawerContent className={cn(
-        "overflow-y-auto border-border/50 p-0 flex flex-col",
-        "h-[92vh] rounded-t-3xl"
-      )}>
-        <DrawerHeader className="px-6 pt-6 pb-0">
+      <DrawerContent className="flex flex-col max-h-[85vh]">
+        <DrawerHeader className="flex-shrink-0">
           <DrawerTitle className="text-lg font-semibold leading-none">Novo Hábito</DrawerTitle>
           <DrawerDescription className="text-sm text-muted-foreground mt-1.5">
-            Comece com o básico e otimize depois
+            Crie seu hábito em menos de 30 segundos
           </DrawerDescription>
         </DrawerHeader>
-
-        <div className="p-6 flex-1 overflow-y-auto">
+        
+        <div className="flex-1 overflow-y-auto px-6">
           {renderEssentialFields()}
         </div>
-
-        <DrawerFooter className="px-6 py-4 border-t">
+        
+        <DrawerFooter className="flex-shrink-0 border-t sticky bottom-0 bg-background">
           <div className="flex justify-between w-full">
-              <Button variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              {isFormValid ? (
-                <Button
-                  type="submit"
-                  onClick={handleCreate}
-                  className="glow-violet hover:shadow-xl"
-                >
-                  Criar
-                </Button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        type="button"
-                        disabled
-                      >
-                        Criar
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {(!isValidTitle && 'Adicione um nome para o hábito') || (!isValidWhen && 'Escolha uma hora ou descreva o comportamento') || (!isValidLocation && 'Defina onde você fará o hábito')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreate}
+              disabled={isCreating}
+              className="glow-violet hover:shadow-xl"
+            >
+              {isCreating ? "Criando..." : "Criar Hábito"}
+            </Button>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
   ) : (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogContent className={cn(
-        "overflow-y-auto border-border/50 p-0 flex flex-col",
-        "max-w-xl w-full max-h-[90vh] rounded-2xl"
-      )}>
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="text-lg font-semibold leading-none">Novo Hábito</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground mt-1.5">
-            Comece com o básico e otimize depois
-          </DialogDescription>
+      <DialogContent className="max-w-xl w-full max-h-[90vh] rounded-2xl !flex !flex-col !p-0 !gap-0 bg-gradient-to-br from-slate-950/95 to-slate-900/95 backdrop-blur-xl">
+        {/* Header melhorado com gradiente */}
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent" />
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 mb-2"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center border border-violet-500/30">
+                <Rocket className="w-5 h-5 text-violet-400" />
+              </div>
+              <DialogTitle className="text-xl font-bold leading-none bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                Novo Hábito
+              </DialogTitle>
+            </motion.div>
+            <DialogDescription className="text-sm text-muted-foreground/80 mt-1.5">
+              Crie seu hábito em menos de 30 segundos ✨
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">
           {renderEssentialFields()}
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t">
+        <DialogFooter className="px-6 py-4 border-t border-border/30 flex-shrink-0 mt-auto bg-gradient-to-t from-slate-950/50 to-transparent">
           <div className="flex justify-between w-full">
-              <Button variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              {isFormValid ? (
-                <Button
-                  type="submit"
-                  onClick={handleCreate}
-                  className="glow-violet hover:shadow-xl"
-                >
-                  Criar
-                </Button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        type="button"
-                        disabled
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+              className="hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button 
+                onClick={handleCreate}
+                disabled={isCreating || formProgress() < 100}
+                className={cn(
+                  "relative overflow-hidden bg-gradient-to-r from-violet-600 via-purple-600 to-violet-600",
+                  "hover:from-violet-500 hover:via-purple-500 hover:to-violet-500",
+                  "text-white shadow-[0_4px_20px_rgba(139,92,246,0.4)]",
+                  "hover:shadow-[0_6px_25px_rgba(139,92,246,0.5)]",
+                  "border-0 disabled:opacity-50 disabled:cursor-not-allowed",
+                  "transition-all duration-300"
+                )}
+              >
+                {/* Efeito de brilho animado */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{
+                    x: ["-100%", "100%"]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 1
+                  }}
+                />
+                <span className="relative flex items-center gap-2">
+                  {isCreating ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       >
-                        Criar
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {(!isValidTitle && 'Adicione um nome para o hábito') || (!isValidWhen && 'Escolha uma hora ou descreva o comportamento') || (!isValidLocation && 'Defina onde você fará o hábito')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
+                        <Loader2 className="w-4 h-4" />
+                      </motion.div>
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Criar Hábito
+                    </>
+                  )}
+                </span>
+              </Button>
+            </motion.div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -139,7 +139,7 @@ const Step11Summary = () => {
       <div className="text-center space-y-4">
         <h2 className="text-3xl font-bold text-slate-50 flex items-center justify-center gap-3">
           Seu primeiro hábito atômico
-          <span className="text-4xl animate-float" style={{ filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.6))" }}>
+          <span className="text-4xl animate-float">
             ⚛️
           </span>
         </h2>

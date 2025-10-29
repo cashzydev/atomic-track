@@ -53,3 +53,5 @@ COMMENT ON COLUMN public.profiles.avatar_url IS 'URL of uploaded avatar image';
 COMMENT ON COLUMN public.profiles.avatar_icon IS 'Name of the selected icon for avatar';
 COMMENT ON COLUMN public.profiles.avatar_color IS 'Color theme for the avatar';
 
+
+

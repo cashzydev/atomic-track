@@ -2,7 +2,7 @@ import confetti from 'canvas-confetti';
 
 /**
  * Animação de partículas atômicas (elétrons orbitando)
- * Inspirada na estrutura do átomo - marca atomicTracker
+ * Inspirada na estrutura do átomo - marca atomicTrack
  */
 export const triggerAtomicAnimation = (x = 0.5, y = 0.6) => {
   const colors = ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#F3E8FF'];

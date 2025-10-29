@@ -166,12 +166,12 @@ const Auth: React.FC = () => {
           <div className="flex items-center justify-center mb-6">
             <img 
               src="/atom-logo.png" 
-              alt="atomicTracker" 
+              alt="atomicTrack" 
               className="w-16 h-16 sm:w-20 sm:h-20 opacity-90"
             />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-2">
-            atomicTracker
+            atomicTrack
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
             Construa hábitos que duram
