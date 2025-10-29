@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setLoading(true); // Garante que o loading é reativado se o contexto for remontado
@@ -30,12 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false); // <--- PONTO CHAVE
 
-        if (session?.user) {
-          // Redirecionar baseado no status de onboarding
+        // Não redirecionar se estiver na rota de callback - o AuthCallback já cuida disso
+        if (session?.user && !location.pathname.includes('/auth/callback')) {
+          // Redirecionar baseado no status de onboarding apenas se não estiver na rota de callback
           const onboardingCompleted = session.user.user_metadata?.onboarding_completed;
-          if (!onboardingCompleted) {
+          if (!onboardingCompleted && location.pathname !== '/onboarding') {
             navigate('/onboarding');
-          } else {
+          } else if (onboardingCompleted && location.pathname !== '/dashboard' && !location.pathname.startsWith('/auth')) {
             navigate('/dashboard');
           }
           
@@ -48,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [location.pathname, navigate]);
 
   const signUp = async (email: string, password: string, name: string) => {
     const redirectUrl = `${window.location.origin}/dashboard`;

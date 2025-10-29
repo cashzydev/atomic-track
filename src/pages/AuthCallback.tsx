@@ -1,17 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Processar tokens do hash da URL (OAuth retorna tokens no hash)
-        // O Supabase processa automaticamente, mas vamos esperar um pouco para garantir
-        await new Promise(resolve => setTimeout(resolve, 300));
+        setIsProcessing(true);
+        
+        // O Supabase processa automaticamente os tokens do hash da URL
+        // Aguardar um pouco mais para garantir que o processamento foi concluído
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Obter a sessão atual
         const { data, error } = await supabase.auth.getSession();
@@ -19,7 +23,8 @@ const AuthCallback: React.FC = () => {
         if (error) {
           console.error('Error getting session:', error);
           toast.error('Erro ao processar login. Tente novamente.');
-          navigate('/auth');
+          window.location.hash = '';
+          navigate('/auth', { replace: true });
           return;
         }
 
@@ -51,23 +56,33 @@ const AuthCallback: React.FC = () => {
             }
           }
 
+          // Limpar hash da URL antes de redirecionar
+          window.location.hash = '';
+          
           // Verificar status de onboarding
           const onboardingCompleted = data.session.user.user_metadata?.onboarding_completed;
           
+          // Pequeno delay para garantir que tudo foi processado
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
           if (onboardingCompleted) {
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
           } else {
-            navigate('/onboarding');
+            navigate('/onboarding', { replace: true });
           }
         } else {
           // Limpar hash da URL e redirecionar
           window.location.hash = '';
-          navigate('/auth');
+          toast.error('Login não pôde ser processado. Tente novamente.');
+          navigate('/auth', { replace: true });
         }
       } catch (error) {
         console.error('Error in auth callback:', error);
         toast.error('Erro ao processar login. Tente novamente.');
-        navigate('/auth');
+        window.location.hash = '';
+        navigate('/auth', { replace: true });
+      } finally {
+        setIsProcessing(false);
       }
     };
 
@@ -75,10 +90,18 @@ const AuthCallback: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-900/10 to-slate-900 flex items-center justify-center">
       <div className="text-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Processando login...</p>
+        <img 
+          src="/atom-logo.png" 
+          alt="atomicTrack"
+          className="w-20 h-20 mx-auto mb-6 animate-pulse"
+        />
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+          <p className="text-slate-300">Processando login...</p>
+        </div>
+        <p className="text-sm text-slate-500">Aguarde um momento</p>
       </div>
     </div>
   );
