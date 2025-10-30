@@ -7,16 +7,15 @@
   ],
   "redirects": [
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "atomictrack.com.br"
         }
       ],
-      "destination": "https://www.atomictrack.com.br/:1",
-      "permanent": true,
-      "statusCode": 301
+      "destination": "https://www.atomictrack.com.br/:path*",
+      "permanent": true
     }
   ],
   "headers": [
@@ -25,10 +24,9 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
+          "value": "no-store, no-cache, must-revalidate"
         }
       ]
     }
   ]
 }
-

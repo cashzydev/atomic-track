@@ -48,9 +48,10 @@ Deno.serve(async (req) => {
     });
 
     // Verificar assinatura do webhook
-    const signature = req.headers.get('x-cakto-signature');
-    if (signature !== webhookSecret) {
-      console.error('Assinatura inválida do webhook. Esperado:', webhookSecret, 'Recebido:', signature);
+    const signatureHeader = req.headers.get('x-cakto-signature');
+    const signatureBody = (payload as any)?.secret || (payload as any)?.signature;
+    if (signatureHeader !== webhookSecret && signatureBody !== webhookSecret) {
+      console.error('Assinatura inválida do webhook.');
       return new Response(JSON.stringify({ error: 'Assinatura inválida' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
