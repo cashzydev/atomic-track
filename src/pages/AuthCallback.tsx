@@ -8,30 +8,76 @@ const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
 
+  // Logs imediatos quando o componente é montado
+  useEffect(() => {
+    console.log('🚨 ========== AuthCallback COMPONENTE MONTADO ==========');
+    console.log('🚨 Timestamp:', new Date().toISOString());
+    console.log('🚨 URL completa:', window.location.href);
+    console.log('🚨 Pathname:', window.location.pathname);
+    console.log('🚨 Search:', window.location.search);
+    console.log('🚨 Hash:', window.location.hash);
+    console.log('🚨 Hash (completo):', window.location.hash || '(vazio)');
+    console.log('🚨 Origin:', window.location.origin);
+    console.log('🚨 Hostname:', window.location.hostname);
+    console.log('🚨 Protocol:', window.location.protocol);
+    console.log('🚨 ================================================');
+  }, []);
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
         setIsProcessing(true);
         
-        console.log('🔄 AuthCallback iniciado');
+        console.log('🔄 AuthCallback handler iniciado');
         console.log('📍 URL atual:', window.location.href);
-        console.log('📍 Hash:', window.location.hash ? 'Hash presente' : 'Sem hash');
+        console.log('📍 Pathname:', window.location.pathname);
+        console.log('📍 Hash completo:', window.location.hash || '(sem hash)');
         console.log('📍 Origin:', window.location.origin);
         console.log('📍 Hostname:', window.location.hostname);
         
         // Verificar se estamos no domínio correto
-        if (!window.location.hostname.includes('atomictrack.com.br') && 
-            !window.location.hostname.includes('localhost')) {
-          console.warn('⚠️ Hostname inesperado:', window.location.hostname);
+        const isValidDomain = window.location.hostname.includes('atomictrack.com.br') || 
+                              window.location.hostname.includes('localhost') ||
+                              window.location.hostname.includes('127.0.0.1');
+        
+        if (!isValidDomain) {
+          console.error('❌ Hostname inesperado:', window.location.hostname);
+          console.error('❌ Esperado: atomictrack.com.br ou localhost');
+          toast.error(`Domínio inválido: ${window.location.hostname}`);
+          navigate('/auth', { replace: true });
+          return;
+        } else {
+          console.log('✅ Domínio válido:', window.location.hostname);
+        }
+
+        // Analisar hash se presente
+        if (window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          console.log('🔑 Parâmetros no hash:');
+          hashParams.forEach((value, key) => {
+            // Não logar valores completos por segurança, apenas indicadores
+            if (key.includes('token') || key.includes('access')) {
+              console.log(`  - ${key}: ${value.substring(0, 20)}... (truncado por segurança)`);
+            } else {
+              console.log(`  - ${key}: ${value}`);
+            }
+          });
+        } else {
+          console.warn('⚠️ Nenhum hash presente na URL - pode indicar que não veio do OAuth');
         }
         
         // O Supabase processa automaticamente os tokens do hash da URL
-        // Aguardar um pouco mais para garantir que o processamento foi concluído
+        console.log('⏳ Aguardando processamento do Supabase...');
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Obter a sessão atual
-        console.log('🔍 Buscando sessão...');
+        console.log('🔍 Buscando sessão do Supabase...');
         const { data, error } = await supabase.auth.getSession();
+        
+        console.log('📊 Resultado getSession:');
+        console.log('  - Tem erro?', !!error);
+        console.log('  - Tem sessão?', !!data?.session);
+        console.log('  - Tem user?', !!data?.session?.user);
         
         if (error) {
           console.error('❌ Error getting session:', error);
@@ -90,22 +136,43 @@ const AuthCallback: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 300));
           
           const redirectPath = onboardingCompleted ? '/dashboard' : '/onboarding';
-          console.log('🚀 Redirecionando para:', redirectPath);
+          console.log('🚀 Preparando redirecionamento...');
+          console.log('  - Destino:', redirectPath);
+          console.log('  - Onboarding completo:', onboardingCompleted);
+          console.log('  - User ID:', data.session.user.id);
+          console.log('  - User Email:', data.session.user.email);
+          
+          // Limpar hash antes de navegar
+          window.location.hash = '';
+          console.log('✅ Hash limpo');
+          
           navigate(redirectPath, { replace: true });
+          console.log('✅ Navegação iniciada para:', redirectPath);
         } else {
-          console.warn('⚠️ Sem sessão de usuário');
+          console.warn('⚠️ Sem sessão de usuário após getSession');
+          console.warn('⚠️ Isso pode indicar:');
+          console.warn('  - Tokens não foram processados corretamente');
+          console.warn('  - URL de redirect está incorreta');
+          console.warn('  - Supabase não conseguiu validar os tokens');
+          
           // Limpar hash da URL e redirecionar
           window.location.hash = '';
           toast.error('Login não pôde ser processado. Tente novamente.');
+          console.log('🔄 Redirecionando para /auth');
           navigate('/auth', { replace: true });
         }
       } catch (error) {
-        console.error('Error in auth callback:', error);
+        console.error('❌ ========== ERRO CAPTURADO ==========');
+        console.error('❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
+        console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'N/A');
+        console.error('❌ =====================================');
         toast.error('Erro ao processar login. Tente novamente.');
         window.location.hash = '';
         navigate('/auth', { replace: true });
       } finally {
         setIsProcessing(false);
+        console.log('🏁 AuthCallback processamento finalizado');
       }
     };
 

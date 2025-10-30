@@ -83,3 +83,4 @@ https://ifuhypkkmkaklkmcypmc.supabase.co/auth/v1/callback
 - A URL de redirect OAuth sempre será `https://www.atomictrack.com.br/auth/callback` independente de como o usuário acessou
 
 
+

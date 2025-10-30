@@ -15,7 +15,19 @@
         }
       ],
       "destination": "https://www.atomictrack.com.br/:1",
-      "permanent": true
+      "permanent": true,
+      "statusCode": 301
+    }
+  ],
+  "headers": [
+    {
+      "source": "/auth/callback(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
+        }
+      ]
     }
   ]
 }
